@@ -1,0 +1,911 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">💰 Payment Management</h1>
+    <div>
+        <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+            <i class="fas fa-plus-circle me-2"></i> Add New Payment
+        </button>
+    </div>
+</div>
+
+<!-- Quick Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2" style="border-left: 4px solid #007bff !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Collected</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ "%.2f"|format(total_collected) }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-money-bill-wave fa-2x text-primary opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2" style="border-left: 4px solid #28a745 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            This Month</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ "%.2f"|format(current_month_total) }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-check fa-2x text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2" style="border-left: 4px solid #17a2b8 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Collection Rate</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "%.1f"|format(collection_rate) }}%</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-percentage fa-2x text-info opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2" style="border-left: 4px solid #ffc107 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Pending Amount</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ "%.2f"|format(total_expected - total_collected) }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-warning opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- All Payments Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 text-primary">
+            <i class="fas fa-list me-2"></i> All Payments
+            <!-- <span class="badge bg-primary ms-2" id="paymentCount">{{ payments|length }}</span> -->
+        </h5>
+        <div class="d-flex gap-2">
+            <!-- Search Box -->
+            <div class="search-box" style="max-width: 250px;">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" id="paymentSearch" class="form-control border-start-0" 
+                           placeholder="Search payments...">
+                </div>
+            </div>
+            
+            <!-- Export Button -->
+            <button class="btn btn-sm btn-outline-success" id="exportPaymentsBtn" title="Export to Excel">
+                <i class="fas fa-file-excel"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="paymentsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Tenant</th>
+                        <th>Room</th>
+                        <th>Type</th>
+                        <th>For</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Reference</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTableBody">
+                    {% for payment in payments %}
+                    <tr class="payment-row" 
+                        data-tenant-name="{{ payment.tenant.full_name|lower }}" 
+                        data-payment-type="{{ payment.payment_type|lower }}" 
+                        data-payment-method="{{ payment.payment_method|lower }}"
+                        data-payment-for="{{ payment.payment_for|lower }}">
+                        <td>
+                            <strong>{{ payment.payment_date.strftime('%d %b %Y') }}</strong>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                
+                                <div>
+                                    <strong class="text-primary">{{ payment.tenant.full_name }}</strong>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">Room {{ payment.tenant.room.room_number }}</span>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if payment.payment_type == 'Rent' %}bg-success
+                                {% elif payment.payment_type == 'Security Deposit' %}bg-warning
+                                {% elif payment.payment_type == 'Maintenance Charge' %}bg-info
+                                {% else %}bg-secondary{% endif %}">
+                                {{ payment.payment_type }}
+                            </span>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ payment.payment_for }}</small>
+                        </td>
+                        <td class="fw-bold text-success">₹{{ "%.2f"|format(payment.amount) }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                <i class="fas 
+                                    {% if payment.payment_method == 'Cash' %}fa-money-bill
+                                    {% elif payment.payment_method == 'UPI' %}fa-mobile-alt
+                                    {% elif payment.payment_method == 'Bank Transfer' %}fa-university
+                                    {% else %}fa-credit-card{% endif %} me-1"></i>
+                                {{ payment.payment_method }}
+                            </span>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ payment.reference_number or 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-success rounded-pill">Completed</span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary view-payment-btn rounded-start" 
+                                        title="View Details" 
+                                        data-payment-id="{{ payment.id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-danger delete-payment-btn rounded-end" 
+                                        title="Delete Payment" 
+                                        data-payment-id="{{ payment.id }}"
+                                        data-payment-amount="{{ payment.amount }}"
+                                        data-tenant-name="{{ payment.tenant.full_name }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-receipt fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">No payments found</h5>
+                                <p class="text-muted">Record your first payment to get started</p>
+                                <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                                    <i class="fas fa-plus-circle me-2"></i>Record First Payment
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Payment Modal -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addPaymentModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i> Record New Payment
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_payment') }}" id="paymentForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- Tenant Selection -->
+                        <div class="col-12">
+                            <label for="tenant_id" class="form-label">Select Tenant *</label>
+                            <select class="form-select" id="tenant_id" name="tenant_id" required>
+                                <option value="">Choose a tenant...</option>
+                                {% for tenant in tenants %}
+                                <option value="{{ tenant.id }}" data-rent="{{ tenant.monthly_rent }}">
+                                    {{ tenant.full_name }} - Room {{ tenant.room.room_number }} - ₹{{ "%.2f"|format(tenant.monthly_rent) }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Payment Details -->
+                        <div class="col-md-6">
+                            <label for="payment_type" class="form-label">Payment Type *</label>
+                            <select class="form-select" id="payment_type" name="payment_type" required>
+                                <option value="Rent">Rent</option>
+                                <option value="Security Deposit">Security Deposit</option>
+                                <option value="Maintenance Charge">Maintenance Charge</option>
+                                <option value="Electricity Bill">Electricity Bill</option>
+                                <option value="Water Bill">Water Bill</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="payment_for" class="form-label">Payment For *</label>
+                            <select class="form-select" id="payment_for" name="payment_for" required>
+                                {% set current_year = now().year %}
+                                {% set current_month = now().month %}
+                                {% for i in range(-2, 4) %}
+                                    {% set month_num = (current_month + i - 1) % 12 + 1 %}
+                                    {% set year = current_year + (current_month + i - 1) // 12 %}
+                                    {% set month_name = [
+                                        'January', 'February', 'March', 'April', 'May', 'June',
+                                        'July', 'August', 'September', 'October', 'November', 'December'
+                                    ][month_num - 1] %}
+                                    <option value="{{ month_name }} {{ year }}" 
+                                            {% if i == 0 %}selected{% endif %}>
+                                        {{ month_name }} {{ year }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Amount and Date -->
+                        <div class="col-md-6">
+                            <label for="amount" class="form-label">Amount *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-success">₹</span>
+                                <input type="number" class="form-control" id="amount" name="amount" step="0.01" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="payment_date" class="form-label">Payment Date *</label>
+                            <input type="date" class="form-control" id="payment_date" name="payment_date" required>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="col-md-6">
+                            <label for="payment_method" class="form-label">Payment Method *</label>
+                            <select class="form-select" id="payment_method" name="payment_method" required>
+                                <option value="Cash">Cash</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Debit Card">Debit Card</option>
+                                <option value="Cheque">Cheque</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="reference_number" class="form-label">Reference Number</label>
+                            <input type="text" class="form-control" id="reference_number" name="reference_number" placeholder="Optional">
+                        </div>
+
+                        <!-- Additional Notes -->
+                        <div class="col-12">
+                            <label for="additional_notes" class="form-label">Additional Notes</label>
+                            <textarea class="form-control" id="additional_notes" name="additional_notes" rows="2" placeholder="Any additional information..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Record Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Payment Modal -->
+<div class="modal fade" id="viewPaymentModal" tabindex="-1" aria-labelledby="viewPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="viewPaymentModalLabel">
+                    <i class="fas fa-eye me-2"></i> Payment Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="viewPaymentModalBody">
+                <!-- Content will be loaded dynamically -->
+                <div class="text-center py-4">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading payment details...</p>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set payment date to today
+    const paymentDate = document.getElementById('payment_date');
+    if (!paymentDate.value) {
+        paymentDate.valueAsDate = new Date();
+    }
+
+    // Auto-fill rent amount when tenant is selected
+    const tenantSelect = document.getElementById('tenant_id');
+    const amountInput = document.getElementById('amount');
+    const paymentType = document.getElementById('payment_type');
+    
+    tenantSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const rentAmount = selectedOption.getAttribute('data-rent');
+        
+        if (rentAmount && selectedOption.value && paymentType.value === 'Rent') {
+            amountInput.value = rentAmount;
+        }
+    });
+
+    // Reset amount when payment type changes
+    paymentType.addEventListener('change', function() {
+        if (this.value !== 'Rent') {
+            amountInput.value = '';
+        } else {
+            const selectedOption = tenantSelect.options[tenantSelect.selectedIndex];
+            const rentAmount = selectedOption.getAttribute('data-rent');
+            if (rentAmount && selectedOption.value) {
+                amountInput.value = rentAmount;
+            }
+        }
+    });
+
+    // Search functionality
+    const paymentSearch = document.getElementById('paymentSearch');
+    const paymentRows = document.querySelectorAll('.payment-row');
+    const paymentCount = document.getElementById('paymentCount');
+    
+    if (paymentSearch) {
+        paymentSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let visibleCount = 0;
+
+            paymentRows.forEach(row => {
+                const tenantName = row.getAttribute('data-tenant-name');
+                const paymentType = row.getAttribute('data-payment-type');
+                const paymentMethod = row.getAttribute('data-payment-method');
+                const paymentFor = row.getAttribute('data-payment-for');
+
+                const matchesSearch = searchTerm === '' || 
+                    tenantName.includes(searchTerm) ||
+                    paymentType.includes(searchTerm) ||
+                    paymentMethod.includes(searchTerm) ||
+                    paymentFor.includes(searchTerm);
+
+                if (matchesSearch) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            paymentCount.textContent = visibleCount;
+        });
+    }
+
+    // View payment functionality
+    const viewButtons = document.querySelectorAll('.view-payment-btn');
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const paymentId = this.getAttribute('data-payment-id');
+            loadPaymentForView(paymentId);
+        });
+    });
+
+    // Delete payment functionality
+    const deleteButtons = document.querySelectorAll('.delete-payment-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const paymentId = this.getAttribute('data-payment-id');
+            const paymentAmount = this.getAttribute('data-payment-amount');
+            const tenantName = this.getAttribute('data-tenant-name');
+            
+            if (confirm(`Are you sure you want to delete this payment of ₹${paymentAmount} for ${tenantName}?`)) {
+                deletePayment(paymentId);
+            }
+        });
+    });
+
+    // Export functionality
+    const exportBtn = document.getElementById('exportPaymentsBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            exportPaymentsToExcel();
+        });
+    }
+
+    // Load payment for view with detailed information
+function loadPaymentForView(paymentId) {
+    fetch(`/api/payment/${paymentId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const payment = data.payment;
+                
+                // Create detailed view HTML
+                const viewHTML = `
+                    <div class="payment-details">
+                        <!-- Payment Header -->
+                        <div class="payment-header text-center mb-4 p-4 bg-light rounded">
+                            <div class="payment-icon mb-3">
+                                <i class="fas fa-receipt fa-4x text-primary"></i>
+                            </div>
+                            <h3 class="text-primary mb-2">Payment Receipt</h3>
+                            <div class="payment-amount">
+                                <h2 class="text-success">₹${parseFloat(payment.amount).toFixed(2)}</h2>
+                            </div>
+                            <div class="payment-status-badge">
+                                <span class="badge bg-success rounded-pill px-3 py-2">
+                                    <i class="fas fa-check-circle me-1"></i>${payment.status}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Tenant Information -->
+                            <div class="col-md-6">
+                                <div class="info-card mb-4">
+                                    <h6 class="card-title bg-primary text-white p-3 rounded-top">
+                                        <i class="fas fa-user me-2"></i>Tenant Information
+                                    </h6>
+                                    <div class="card-body">
+                                        <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                            <span class="fw-bold">Full Name:</span>
+                                            <span class="text-primary">${payment.tenant_name}</span>
+                                        </div>
+                                        <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                            <span class="fw-bold">Phone Number:</span>
+                                            <span class="text-muted">${payment.tenant_phone}</span>
+                                        </div>
+                                        <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                            <span class="fw-bold">Room Number:</span>
+                                            <span class="badge bg-light text-dark">${payment.room_number}</span>
+                                        </div>
+                                        <div class="info-item d-flex justify-content-between py-2">
+                                            <span class="fw-bold">Room Type:</span>
+                                            <span>${payment.room_type}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Payment Information -->
+                            <div class="col-md-6">
+                                <div class="info-card mb-4">
+                                    <h6 class="card-title bg-success text-white p-3 rounded-top">
+                                        <i class="fas fa-money-bill-wave me-2"></i>Payment Information
+                                    </h6>
+                                    <div class="card-body">
+                                        <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                            <span class="fw-bold">Payment Type:</span>
+                                            <span class="badge ${
+                                                payment.payment_type === 'Rent' ? 'bg-success' : 
+                                                payment.payment_type === 'Security Deposit' ? 'bg-warning' : 
+                                                payment.payment_type === 'Maintenance Charge' ? 'bg-info' : 'bg-secondary'
+                                            }">${payment.payment_type}</span>
+                                        </div>
+                                        <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                            <span class="fw-bold">Payment For:</span>
+                                            <span class="text-info">${payment.payment_for}</span>
+                                        </div>
+                                        <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                            <span class="fw-bold">Payment Date:</span>
+                                            <span class="text-muted">${payment.payment_date}</span>
+                                        </div>
+                                        <div class="info-item d-flex justify-content-between py-2">
+                                            <span class="fw-bold">Recorded On:</span>
+                                            <span class="text-muted">${payment.created_at}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method & Reference -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-card mb-4">
+                                    <h6 class="card-title bg-info text-white p-3 rounded-top">
+                                        <i class="fas fa-credit-card me-2"></i>Payment Method
+                                    </h6>
+                                    <div class="card-body">
+                                        <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                            <span class="fw-bold">Method:</span>
+                                            <span class="badge bg-light text-dark">
+                                                <i class="fas ${
+                                                    payment.payment_method === 'Cash' ? 'fa-money-bill' :
+                                                    payment.payment_method === 'UPI' ? 'fa-mobile-alt' :
+                                                    payment.payment_method === 'Bank Transfer' ? 'fa-university' : 'fa-credit-card'
+                                                } me-1"></i>
+                                                ${payment.payment_method}
+                                            </span>
+                                        </div>
+                                        <div class="info-item d-flex justify-content-between py-2">
+                                            <span class="fw-bold">Reference Number:</span>
+                                            <span class="text-muted font-monospace">${payment.reference_number}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="info-card mb-4">
+                                    <h6 class="card-title bg-warning text-white p-3 rounded-top">
+                                        <i class="fas fa-file-invoice me-2"></i>Amount Details
+                                    </h6>
+                                    <div class="card-body">
+                                        <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                            <span class="fw-bold">Amount Paid:</span>
+                                            <span class="text-success fw-bold fs-5">₹${parseFloat(payment.amount).toFixed(2)}</span>
+                                        </div>
+                                        <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                            <span class="fw-bold">Amount in Words:</span>
+                                            <span class="text-muted" id="amountInWords">${convertToWords(payment.amount)}</span>
+                                        </div>
+                                        <div class="info-item d-flex justify-content-between py-2">
+                                            <span class="fw-bold">Transaction Status:</span>
+                                            <span class="badge bg-success">Verified</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Notes -->
+                        <div class="info-card">
+                            <h6 class="card-title bg-dark text-white p-3 rounded-top">
+                                <i class="fas fa-sticky-note me-2"></i>Additional Notes
+                            </h6>
+                            <div class="card-body">
+                                <p class="mb-0">${payment.additional_notes}</p>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-center gap-3">
+                                    <button class="btn btn-primary" onclick="printPaymentReceipt(${payment.id})">
+                                        <i class="fas fa-print me-2"></i>Print Receipt
+                                    </button>
+                                    <button class="btn btn-success" onclick="downloadPaymentReceipt(${payment.id})">
+                                        <i class="fas fa-download me-2"></i>Download PDF
+                                    </button>
+                                    <button class="btn btn-outline-info" onclick="sharePaymentDetails(${payment.id})">
+                                        <i class="fas fa-share-alt me-2"></i>Share
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Receipt Footer -->
+                        <div class="receipt-footer mt-4 pt-3 border-top text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                This is an computer-generated receipt. No signature required.
+                            </small>
+                            <br>
+                            <small class="text-muted">
+                                Payment ID: #${payment.id.toString().padStart(6, '0')}
+                            </small>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('viewPaymentModalBody').innerHTML = viewHTML;
+                
+                // Show the modal
+                const viewModal = new bootstrap.Modal(document.getElementById('viewPaymentModal'));
+                viewModal.show();
+            } else {
+                showNotification('Error loading payment details: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error loading payment details', 'error');
+        });
+}
+
+// Convert amount to words function
+function convertToWords(amount) {
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    
+    let num = parseFloat(amount);
+    if (num === 0) return 'Zero Rupees';
+    
+    let words = '';
+    
+    // Handle rupees part
+    if (num >= 10000000) {
+        words += convertToWords(Math.floor(num / 10000000)) + ' Crore ';
+        num %= 10000000;
+    }
+    
+    if (num >= 100000) {
+        words += convertToWords(Math.floor(num / 100000)) + ' Lakh ';
+        num %= 100000;
+    }
+    
+    if (num >= 1000) {
+        words += convertToWords(Math.floor(num / 1000)) + ' Thousand ';
+        num %= 1000;
+    }
+    
+    if (num >= 100) {
+        words += convertToWords(Math.floor(num / 100)) + ' Hundred ';
+        num %= 100;
+    }
+    
+    if (num > 0) {
+        if (words !== '') words += 'and ';
+        
+        if (num < 10) {
+            words += ones[num];
+        } else if (num < 20) {
+            words += teens[num - 10];
+        } else {
+            words += tens[Math.floor(num / 10)];
+            if (num % 10 > 0) {
+                words += ' ' + ones[num % 10];
+            }
+        }
+    }
+    
+    return words + ' Rupees Only';
+}
+
+// Print receipt function
+function printPaymentReceipt(paymentId) {
+    const paymentDetails = document.querySelector('.payment-details');
+    const originalContents = document.body.innerHTML;
+    
+    // Create print-friendly content
+    const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Payment Receipt #${paymentId.toString().padStart(6, '0')}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .receipt-header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+                .receipt-amount { color: #28a745; font-size: 24px; font-weight: bold; margin: 10px 0; }
+                .info-section { margin-bottom: 15px; }
+                .info-label { font-weight: bold; width: 150px; display: inline-block; }
+                .footer { margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc; text-align: center; font-size: 12px; color: #666; }
+                @media print { body { margin: 0; } }
+            </style>
+        </head>
+        <body>
+            <div class="receipt-header">
+                <h2>PAYMENT RECEIPT</h2>
+                <div class="receipt-amount">₹${document.querySelector('.text-success.fs-5').textContent}</div>
+                <div>Status: <strong>PAID</strong></div>
+            </div>
+            
+            <div class="info-section">
+                <div><span class="info-label">Tenant Name:</span> ${document.querySelector('.text-primary').textContent}</div>
+                <div><span class="info-label">Room Number:</span> ${document.querySelector('.badge.bg-light').textContent}</div>
+                <div><span class="info-label">Payment Type:</span> ${document.querySelector('.bg-success').textContent}</div>
+                <div><span class="info-label">Payment For:</span> ${document.querySelector('.text-info').textContent}</div>
+                <div><span class="info-label">Payment Date:</span> ${document.querySelector('.text-muted').textContent}</div>
+                <div><span class="info-label">Payment Method:</span> ${document.querySelector('.badge.bg-light').nextElementSibling.textContent}</div>
+                <div><span class="info-label">Reference No:</span> ${document.querySelector('.font-monospace').textContent}</div>
+            </div>
+            
+            <div class="info-section">
+                <div><span class="info-label">Amount in Words:</span> ${document.getElementById('amountInWords').textContent}</div>
+            </div>
+            
+            <div class="footer">
+                <p>This is a computer-generated receipt. No signature required.</p>
+                <p>Payment ID: #${paymentId.toString().padStart(6, '0')} | Generated on: ${new Date().toLocaleDateString()}</p>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Download PDF function (placeholder - you can integrate with a PDF library)
+function downloadPaymentReceipt(paymentId) {
+    showNotification('PDF download functionality can be integrated with libraries like jsPDF', 'info');
+}
+
+// Share payment details function
+function sharePaymentDetails(paymentId) {
+    if (navigator.share) {
+        navigator.share({
+            title: 'Payment Receipt',
+            text: `Payment receipt for ${document.querySelector('.text-primary').textContent}`,
+            url: window.location.href
+        })
+        .catch(error => console.log('Error sharing:', error));
+    } else {
+        showNotification('Web Share API not supported in this browser', 'info');
+    }
+}
+    // Delete payment function
+    function deletePayment(paymentId) {
+        fetch(`/delete_payment/${paymentId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification('Error: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while deleting the payment.', 'error');
+        });
+    }
+
+    // Export to Excel function
+    function exportPaymentsToExcel() {
+        const visiblePayments = [];
+        document.querySelectorAll('.payment-row').forEach(row => {
+            if (row.style.display !== 'none') {
+                const cells = row.querySelectorAll('td');
+                visiblePayments.push({
+                    date: cells[0].textContent.trim(),
+                    tenant: cells[1].textContent.trim(),
+                    room: cells[2].textContent.trim(),
+                    type: cells[3].textContent.trim(),
+                    period: cells[4].textContent.trim(),
+                    amount: cells[5].textContent.trim(),
+                    method: cells[6].textContent.trim(),
+                    reference: cells[7].textContent.trim()
+                });
+            }
+        });
+
+        let csvContent = "Date,Tenant,Room,Type,Period,Amount,Method,Reference\n";
+        visiblePayments.forEach(payment => {
+            csvContent += `"${payment.date}","${payment.tenant}","${payment.room}","${payment.type}","${payment.period}","${payment.amount}","${payment.method}","${payment.reference}"\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `payments_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showNotification('Payments data exported successfully!', 'success');
+    }
+
+    // Notification function
+    function showNotification(message, type = 'info') {
+        const existingAlerts = document.querySelectorAll('.custom-notification');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        const alertDiv = document.createElement('div');
+        const bgColor = type === 'success' ? 'success' : type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'info';
+        
+        alertDiv.className = `alert alert-${bgColor} custom-notification alert-dismissible fade show`;
+        alertDiv.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                <span>${message}</span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            if (alertDiv.parentElement) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+
+<style>
+.payment-row:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+.search-box .input-group {
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.search-box .form-control {
+    border: 1px solid #dee2e6;
+    border-left: none;
+    font-size: 0.875rem;
+}
+
+.search-box .input-group-text {
+    border: 1px solid #dee2e6;
+    border-right: none;
+    background: white;
+    padding: 0.375rem 0.75rem;
+}
+
+.empty-state {
+    padding: 3rem 1rem;
+}
+
+.btn-group-sm .btn {
+    border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-header .d-flex {
+        flex-wrap: wrap;
+        gap: 0.5rem !important;
+    }
+    
+    .search-box {
+        max-width: 100% !important;
+        flex: 1 1 100%;
+    }
+}
+</style>
+{% endblock %}

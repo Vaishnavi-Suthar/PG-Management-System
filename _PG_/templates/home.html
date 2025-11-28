@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PG Manager - Admin Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Base Styles */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --text-light: #ecf0f1;
+            --text-dark: #2c3e50;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        .navbar {
+            transition: all 0.3s ease;
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .navbar-toggler {
+            border: none;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            position: relative;
+            color: white;
+            padding: 120px 0 80px;
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #34495e 100%);
+        }
+
+        .bg-carousel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 500%;
+            height: 100%;
+            display: flex;
+            animation: slide 25s linear infinite;
+        }
+
+        .bg-slide {
+            width: 20%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+
+        .bg-slide::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(44, 62, 80, 0.7);
+        }
+
+        .bg-slide-1 { background-image: url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80'); }
+        .bg-slide-2 { background-image: url('https://images.unsplash.com/photo-1555854877-bab0e564b8d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80'); }
+        .bg-slide-3 { background-image: url('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2058&q=80'); }
+        .bg-slide-4 { background-image: url('https://images.unsplash.com/photo-1567496898669-ee935f5f647a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80'); }
+        .bg-slide-5 { background-image: url('https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80'); }
+
+        @keyframes slide {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(0); }
+            25% { transform: translateX(-20%); }
+            45% { transform: translateX(-20%); }
+            50% { transform: translateX(-40%); }
+            70% { transform: translateX(-40%); }
+            75% { transform: translateX(-60%); }
+            95% { transform: translateX(-60%); }
+            100% { transform: translateX(-80%); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .hero-content h1 {
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .hero-content .lead {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .system-stats {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .stat-item {
+            padding: 1rem;
+        }
+
+        .stat-item i {
+            margin-bottom: 1rem;
+        }
+
+        .stat-item h4 {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-item p {
+            color: #666;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        /* Cards */
+        .feature-card, .rule-card {
+            transition: all 0.3s ease;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .feature-card:hover, .rule-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-card .card-body, .rule-card {
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .feature-card i, .rule-card i {
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover i, .rule-card:hover i {
+            transform: scale(1.1);
+        }
+
+        /* Sections */
+        section {
+            padding: 5rem 0;
+        }
+
+        .section-title {
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .section-subtitle {
+            color: #666;
+            margin-bottom: 3rem;
+        }
+
+        /* Rules Section */
+        .rules-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .rule-icon {
+            margin-bottom: 1.5rem;
+        }
+
+        .rule-card ul li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .rule-card ul li:last-child {
+            border-bottom: none;
+        }
+
+        /* About Section */
+        .about-section {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--primary-color) !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 100px 0 60px;
+                min-height: 80vh;
+            }
+
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-content .lead {
+                font-size: 1.1rem;
+            }
+
+            .system-stats {
+                padding: 1.5rem;
+            }
+
+            .stat-item {
+                padding: 0.5rem;
+                margin-bottom: 1rem;
+            }
+
+            .stat-item i {
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+            }
+
+            section {
+                padding: 3rem 0;
+            }
+
+            .feature-card .card-body, .rule-card {
+                padding: 1.5rem;
+            }
+
+            .navbar-brand {
+                font-size: 1.25rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .hero-section {
+                padding: 80px 0 40px;
+                min-height: 70vh;
+            }
+
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+
+            .hero-content .lead {
+                font-size: 1rem;
+            }
+
+            .system-stats {
+                padding: 1rem;
+                border-radius: 10px;
+            }
+
+            .stat-item {
+                margin-bottom: 1.5rem;
+            }
+
+            .stat-item h4 {
+                font-size: 1.5rem;
+            }
+
+            .feature-card, .rule-card {
+                margin-bottom: 1.5rem;
+            }
+
+            .section-title {
+                font-size: 1.75rem;
+            }
+
+            .modal-dialog {
+                margin: 1rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .hero-content h1 {
+                font-size: 1.75rem;
+            }
+
+            .stat-item h4 {
+                font-size: 1.25rem;
+            }
+
+            .feature-card .card-body, .rule-card {
+                padding: 1rem;
+            }
+        }
+
+        /* Animation pause on hover */
+        .hero-section:hover .bg-carousel {
+            animation-play-state: paused;
+        }
+
+        /* Loading animation */
+        .loading {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+        }
+
+        .loaded {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Back to top button */
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--secondary-color);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+        }
+
+        .back-to-top:hover {
+            background: var(--primary-color);
+            transform: translateY(-3px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#home">
+                <i class="fas fa-home me-2"></i>PG Manager
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="#home">Home</a>
+                    <a class="nav-link" href="#features">Features</a>
+                    <a class="nav-link" href="#rules">Rules</a>
+                    <a class="nav-link" href="#about">About</a>
+                    <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">
+                        <i class="fas fa-sign-in-alt me-1"></i>Admin Login
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="loginModalLabel">
+                        <i class="fas fa-lock me-2"></i>Admin Login
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('login') }}">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" id="username" name="username" required placeholder="Enter admin username">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                <input type="password" class="form-control" id="password" name="password" required placeholder="Enter password">
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login to Dashboard
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            <strong>Default Credentials:</strong><br>
+                            Username: <code>admin</code> | Password: <code>admin123</code>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-section">
+        <div class="bg-carousel">
+            <div class="bg-slide bg-slide-1"></div>
+            <div class="bg-slide bg-slide-2"></div>
+            <div class="bg-slide bg-slide-3"></div>
+            <div class="bg-slide bg-slide-4"></div>
+            <div class="bg-slide bg-slide-5"></div>
+        </div>
+        
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="display-4 fw-bold mb-4 loading">PG Management System</h1>
+                <p class="lead mb-4 loading">Complete solution for managing your PG/Hostel business efficiently</p>
+                <div class="row justify-content-center">
+                    <div class="col-12 col-lg-10">
+                        <div class="system-stats loading">
+                            <div class="row text-dark">
+                                <div class="col-6 col-md-3 stat-item">
+                                    <i class="fas fa-building fa-3x text-primary"></i>
+                                    <h4>24+</h4>
+                                    <p>Rooms Managed</p>
+                                </div>
+                                <div class="col-6 col-md-3 stat-item">
+                                    <i class="fas fa-users fa-3x text-success"></i>
+                                    <h4>68+</h4>
+                                    <p>Happy Tenants</p>
+                                </div>
+                                <div class="col-6 col-md-3 stat-item">
+                                    <i class="fas fa-rupee-sign fa-3x text-warning"></i>
+                                    <h4>₹2.45L+</h4>
+                                    <p>Monthly Revenue</p>
+                                </div>
+                                <div class="col-6 col-md-3 stat-item">
+                                    <i class="fas fa-chart-line fa-3x text-info"></i>
+                                    <h4>85%</h4>
+                                    <p>Occupancy Rate</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="section-title">Powerful Features</h2>
+                <p class="section-subtitle">Everything you need to manage your PG business efficiently</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 loading">
+                        <div class="card-body">
+                            <i class="fas fa-door-open fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Room Management</h5>
+                            <p class="card-text">Manage room allocations, availability, and room details with ease. Track occupancy rates and room status in real-time.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 loading">
+                        <div class="card-body">
+                            <i class="fas fa-users fa-3x text-success mb-3"></i>
+                            <h5 class="card-title">Tenant Management</h5>
+                            <p class="card-text">Complete tenant profiles with personal details, documents, and room allocation. Track tenant history and agreements.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 loading">
+                        <div class="card-body">
+                            <i class="fas fa-money-bill-wave fa-3x text-warning mb-3"></i>
+                            <h5 class="card-title">Payment Tracking</h5>
+                            <p class="card-text">Automated rent collection tracking, payment reminders, and financial reports. Multiple payment method support.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 loading">
+                        <div class="card-body">
+                            <i class="fas fa-tools fa-3x text-danger mb-3"></i>
+                            <h5 class="card-title">Complaint System</h5>
+                            <p class="card-text">Efficient complaint management with priority levels, assignment tracking, and resolution monitoring.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 loading">
+                        <div class="card-body">
+                            <i class="fas fa-chart-bar fa-3x text-info mb-3"></i>
+                            <h5 class="card-title">Analytics & Reports</h5>
+                            <p class="card-text">Comprehensive reports on revenue, occupancy, tenant demographics, and business performance metrics.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card feature-card h-100 loading">
+                        <div class="card-body">
+                            <i class="fas fa-mobile-alt fa-3x text-secondary mb-3"></i>
+                            <h5 class="card-title">Responsive Design</h5>
+                            <p class="card-text">Fully responsive interface that works perfectly on desktop, tablet, and mobile devices.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rules & Regulations Section -->
+    <section id="rules" class="rules-section py-5">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="section-title">PG Rules & Regulations</h2>
+                <p class="section-subtitle">Important guidelines for all tenants to ensure comfortable and harmonious living</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card rule-card h-100 loading">
+                        <div class="rule-icon">
+                            <i class="fas fa-money-bill-wave fa-2x text-warning"></i>
+                        </div>
+                        <h5 class="card-title">Payment Rules</h5>
+                        <div class="card-text text-start">
+                            <ul class="list-unstyled">
+                                <li>✅ Rent due on 1st of every month</li>
+                                <li>✅ Late fee: ₹50/day after 5th</li>
+                                <li>✅ Security deposit: Refundable</li>
+                                <li>✅ Electricity bill: Separate billing</li>
+                                <li>✅ Maintenance: Included in rent</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card rule-card h-100 loading">
+                        <div class="rule-icon">
+                            <i class="fas fa-clock fa-2x text-info"></i>
+                        </div>
+                        <h5 class="card-title">Visiting Hours</h5>
+                        <div class="card-text text-start">
+                            <ul class="list-unstyled">
+                                <li>✅ Guests allowed: 8:00 AM - 10:00 PM</li>
+                                <li>✅ Overnight guests: Prior permission</li>
+                                <li>✅ Visitor registration: Mandatory</li>
+                                <li>✅ Common areas: Respect others</li>
+                                <li>✅ Quiet hours: 11:00 PM - 6:00 AM</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card rule-card h-100 loading">
+                        <div class="rule-icon">
+                            <i class="fas fa-home fa-2x text-success"></i>
+                        </div>
+                        <h5 class="card-title">Room Maintenance</h5>
+                        <div class="card-text text-start">
+                            <ul class="list-unstyled">
+                                <li>✅ Cleaning: Daily room cleaning</li>
+                                <li>✅ Damages: Tenant responsibility</li>
+                                <li>✅ AC usage: As per timings</li>
+                                <li>✅ Furniture: Handle with care</li>
+                                <li>✅ Repairs: Report immediately</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card rule-card h-100 loading">
+                        <div class="rule-icon">
+                            <i class="fas fa-utensils fa-2x text-primary"></i>
+                        </div>
+                        <h5 class="card-title">Food & Kitchen</h5>
+                        <div class="card-text text-start">
+                            <ul class="list-unstyled">
+                                <li>✅ Meal timings: Strictly followed</li>
+                                <li>✅ Kitchen access: 6:00 AM - 11:00 PM</li>
+                                <li>✅ Cleanliness: Maintain hygiene</li>
+                                <li>✅ Outside food: Allowed in rooms</li>
+                                <li>✅ Cooking: In designated areas only</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card rule-card h-100 loading">
+                        <div class="rule-icon">
+                            <i class="fas fa-shield-alt fa-2x text-danger"></i>
+                        </div>
+                        <h5 class="card-title">Security Rules</h5>
+                        <div class="card-text text-start">
+                            <ul class="list-unstyled">
+                                <li>✅ Entry/Exit: Register after 10 PM</li>
+                                <li>✅ Keys: Don't duplicate</li>
+                                <li>✅ Valuables: Self responsibility</li>
+                                <li>✅ Emergency: Contact manager</li>
+                                <li>✅ CCTV: For security purposes</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card rule-card h-100 loading">
+                        <div class="rule-icon">
+                            <i class="fas fa-users fa-2x text-secondary"></i>
+                        </div>
+                        <h5 class="card-title">General Conduct</h5>
+                        <div class="card-text text-start">
+                            <ul class="list-unstyled">
+                                <li>✅ Respect: All community members</li>
+                                <li>✅ Noise: Keep minimal</li>
+                                <li>✅ Smoking: Not permitted</li>
+                                <li>✅ Alcohol: Not permitted</li>
+                                <li>✅ Pets: Not allowed</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Important Notice -->
+            <div class="alert alert-warning mt-5 text-dark loading">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <div>
+                        <h5 class="alert-heading mb-2">Important Notice</h5>
+                        <p class="mb-2">Violation of rules may lead to penalties or termination of stay. Management reserves the right to update rules as needed.</p>
+                        <small class="d-block"><strong>Emergency Contact:</strong> +91-9874563210</small>
+                        <small><strong>Manager:</strong> +91-9632587410</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-12 col-lg-6 mb-4 mb-lg-0 loading">
+                    <h2 class="section-title mb-4">About PG Manager Pro</h2>
+                    <p class="lead mb-4">
+                        PG Manager Pro is a comprehensive management system designed specifically for PG and hostel businesses. 
+                        Our platform helps you streamline operations, improve efficiency, and grow your business.
+                    </p>
+                    <div class="row">
+                        <div class="col-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Easy to Use</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Real-time Updates</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Secure & Reliable</li>
+                            </ul>
+                        </div>
+                        <div class="col-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> 24/7 Support</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Regular Updates</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Mobile Friendly</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6 loading">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">System Information</h5>
+                            <div class="row text-center">
+                                <div class="col-6 col-sm-3 mb-4">
+                                    <i class="fas fa-database fa-2x text-primary mb-2"></i>
+                                    <h6 class="mb-1">SQLite</h6>
+                                    <small class="text-muted">Database</small>
+                                </div>
+                                <div class="col-6 col-sm-3 mb-4">
+                                    <i class="fab fa-python fa-2x text-success mb-2"></i>
+                                    <h6 class="mb-1">Flask</h6>
+                                    <small class="text-muted">Backend</small>
+                                </div>
+                                <div class="col-6 col-sm-3 mb-4">
+                                    <i class="fab fa-html5 fa-2x text-warning mb-2"></i>
+                                    <h6 class="mb-1">HTML5</h6>
+                                    <small class="text-muted">Frontend</small>
+                                </div>
+                                <div class="col-6 col-sm-3 mb-4">
+                                    <i class="fab fa-js-square fa-2x text-info mb-2"></i>
+                                    <h6 class="mb-1">JavaScript</h6>
+                                    <small class="text-muted">Interactivity</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-12 col-md-6 mb-3 mb-md-0">
+                    <h5 class="mb-2"><i class="fas fa-home me-2"></i>PG Manager Pro</h5>
+                    <p class="mb-0 text-light">Complete PG Management Solution</p>
+                </div>
+                <div class="col-12 col-md-6 text-md-end">
+                    <p class="mb-1">&copy; 2024 PG Manager Pro. All rights reserved.</p>
+                    <small class="text-light">Version 1.0 | Built with Flask & Bootstrap</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <a href="#home" class="back-to-top">
+        <i class="fas fa-chevron-up"></i>
+    </a>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-show modal if there are error messages
+            const errorAlerts = document.querySelectorAll('.alert-danger');
+            if (errorAlerts.length > 0) {
+                var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                loginModal.show();
+            }
+
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Back to top button
+            const backToTopButton = document.querySelector('.back-to-top');
+            
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    backToTopButton.classList.add('show');
+                } else {
+                    backToTopButton.classList.remove('show');
+                }
+            });
+
+            // Loading animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('loaded');
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all loading elements
+            document.querySelectorAll('.loading').forEach(el => {
+                observer.observe(el);
+            });
+
+            // Initialize all elements as loaded after a short delay
+            setTimeout(() => {
+                document.querySelectorAll('.loading').forEach(el => {
+                    if (el.getBoundingClientRect().top < window.innerHeight) {
+                        el.classList.add('loaded');
+                    }
+                });
+            }, 100);
+        });
+    </script>
+</body>
+</html>

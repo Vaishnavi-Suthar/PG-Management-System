@@ -1,0 +1,1312 @@
+{% extends "base.html" %}
+
+{% block title %}Rooms Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">🏠 Rooms Management</h1>
+    <div>
+        <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#addRoomModal">
+            <i class="fas fa-plus-circle me-2"></i> Add New Room
+        </button>
+        <button type="button" class="btn btn-outline-danger btn-lg" id="bulkDeleteBtn" style="display: none;">
+            <i class="fas fa-trash me-2"></i> Delete Selected
+        </button>
+    </div>
+</div>
+
+<!-- Quick Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2" style="border-left: 4px solid #28a745 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Available Rooms</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.vacant_rooms }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-door-open fa-2x text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2" style="border-left: 4px solid #007bff !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Occupied Rooms</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.occupied_rooms }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-bed fa-2x text-primary opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2" style="border-left: 4px solid #ffc107 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Under Maintenance</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ rooms|selectattr('status', 'equalto', 'Maintenance')|list|length }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-tools fa-2x text-warning opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2" style="border-left: 4px solid #17a2b8 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Total Rooms</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_rooms }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-building fa-2x text-info opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Panel -->
+<div class="card mb-4 shadow-sm" id="bulkActionsPanel" style="display: none; border-left: 4px solid #6c757d;">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="fas fa-tasks me-2"></i> Bulk Actions</h6>
+            <span class="badge bg-primary" id="selectedCount">0 rooms selected</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-success btn-sm shadow-sm" onclick="bulkUpdateStatus('Available')">
+                <i class="fas fa-check-circle me-1"></i> Mark Available
+            </button>
+            <button type="button" class="btn btn-warning btn-sm shadow-sm" onclick="bulkUpdateStatus('Maintenance')">
+                <i class="fas fa-tools me-1"></i> Mark Maintenance
+            </button>
+            <button type="button" class="btn btn-danger btn-sm shadow-sm" onclick="bulkUpdateStatus('Not Available')">
+                <i class="fas fa-times-circle me-1"></i> Mark Not Available
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm shadow-sm" onclick="deleteSelectedRooms()">
+                <i class="fas fa-trash-alt me-1"></i> Delete Selected Rooms
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- All Rooms Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0 text-primary">
+                <i class="fas fa-list me-2"></i> All Rooms
+            </h5>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="selectAllRooms">
+                <label class="form-check-label small text-muted" for="selectAllRooms">
+                    Select All
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="roomsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th width="50px">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAllHeader">
+                            </div>
+                        </th>
+                        <th>Room No</th>
+                        <th>Floor</th>
+                        <th>Type</th>
+                        <th>Sharing</th>
+                        <th>Rent</th>
+                        <th>Deposit</th>
+                        <!-- <th>Facilities</th> -->
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for room in rooms %}
+                    <tr class="room-row">
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input room-checkbox" type="checkbox" 
+                                       value="{{ room.id }}" data-room-number="{{ room.room_number }}">
+                            </div>
+                        </td>
+                        <td>
+                            <strong class="text-primary">{{ room.room_number }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">{{ room.floor }}</span>
+                        </td>
+                        <td>{{ room.room_type }}</td>
+                        <td>
+                            <span class="badge bg-info text-white">{{ room.sharing_type }} Person</span>
+                        </td>
+                        <td class="fw-bold text-success">₹{{ "%.2f"|format(room.rent_amount) }}</td>
+                        <td class="fw-bold text-warning">₹{{ "%.2f"|format(room.security_deposit) }}</td>
+                        <!-- <td>
+                            {% if room.facilities %}
+                                <div class="facility-tags">
+                                    {% for facility in room.facilities.split(', ') %}
+                                    <small class="badge bg-light text-muted border me-1">{{ facility }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td> -->
+                        <td>
+                            {% if room.status == 'Available' %}
+                                <span class="badge bg-success rounded-pill">Available</span>
+                            {% elif room.status == 'Occupied' %}
+                                <span class="badge bg-primary rounded-pill">Occupied</span>
+                            {% elif room.status == 'Maintenance' %}
+                                <span class="badge bg-warning rounded-pill">Maintenance</span>
+                            {% else %}
+                                <span class="badge bg-danger rounded-pill">Not Available</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary edit-room-btn rounded-start" 
+                                        title="Edit Room" 
+                                        data-room-id="{{ room.id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-info view-room-btn" 
+                                        title="View Details" 
+                                        data-room-id="{{ room.id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                {% if room.status == 'Available' or room.status == 'Partially Occupied' %}
+                                <a href="{{ url_for('assign_tenant', room_id=room.id) }}" 
+                                   class="btn btn-outline-success rounded-end" 
+                                   title="Assign Tenant">
+                                    <i class="fas fa-user-plus"></i>
+                                </a>
+                                {% else %}
+                                <button class="btn btn-outline-secondary rounded-end" disabled title="Room Not Available">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-door-closed fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">No rooms found</h5>
+                                <p class="text-muted">Get started by adding your first room</p>
+                                <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addRoomModal">
+                                    <i class="fas fa-plus me-2"></i>Add Your First Room
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Room Modal -->
+<div class="modal fade" id="addRoomModal" tabindex="-1" aria-labelledby="addRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addRoomModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i> Add New Room
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_room') }}" id="roomForm">
+                <div class="modal-body">
+                    <!-- Room Basic Information -->
+                    <div class="section-card mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>Basic Information
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="room_number" class="form-label">Room Number *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-hashtag text-muted"></i></span>
+                                    <input type="text" class="form-control" id="room_number" name="room_number" placeholder="e.g., 101, G-01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="floor" class="form-label">Floor *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-building text-muted"></i></span>
+                                    <select class="form-select" id="floor" name="floor" required>
+                                        <option value="">Select Floor</option>
+                                        <option value="Ground">Ground Floor</option>
+                                        <option value="First">First Floor</option>
+                                        <option value="Second">Second Floor</option>
+                                        <option value="Third">Third Floor</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="room_type" class="form-label">Room Type *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-home text-muted"></i></span>
+                                    <select class="form-select" id="room_type" name="room_type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="Single (Female)">Single (Female)</option>
+                                        <option value="Sharing (Female)">Sharing (Female)</option>
+                                        <option value="Suite (Female)">Suite (Female)</option>
+                                        <option value="Deluxe (Female)">Deluxe (Female)</option>
+                                        <option value="Single (Male)">Single (Male)</option>
+                                        <option value="Sharing (Male)">Sharing (Male)</option>
+                                        <option value="Suite (Male)">Suite (Male)</option>
+                                        <option value="Deluxe (Male)">Deluxe (Male)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="sharing_type" class="form-label">Sharing Type *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-users text-muted"></i></span>
+                                    <select class="form-select" id="sharing_type" name="sharing_type" required>
+                                        <option value="">Select Capacity</option>
+                                        <option value="1">1 Person</option>
+                                        <option value="2">2 Persons</option>
+                                        <option value="3">3 Persons</option>
+                                        <option value="4">4 Persons</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Information -->
+                    <div class="section-card mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-rupee-sign me-2 text-success"></i>Financial Information
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="rent_amount" class="form-label">Rent Amount *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-success">₹</span>
+                                    <input type="number" class="form-control" id="rent_amount" name="rent_amount" step="0.01" min="0" placeholder="0.00" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="security_deposit" class="form-label">Security Deposit *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-warning">₹</span>
+                                    <input type="number" class="form-control" id="security_deposit" name="security_deposit" step="0.01" min="0" placeholder="0.00" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Facilities & Features -->
+                    <div class="section-card mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-star me-2 text-warning"></i>Facilities & Features
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Facilities</label>
+                                <div class="facilities-grid">
+                                    <div class="form-check facility-card">
+                                        <input class="form-check-input" type="checkbox" name="facilities" value="Attached Bath" id="bath">
+                                        <label class="form-check-label facility-label" for="bath">
+                                            <i class="fas fa-bath me-2"></i>Attached Bath
+                                        </label>
+                                    </div>
+                                    <div class="form-check facility-card">
+                                        <input class="form-check-input" type="checkbox" name="facilities" value="Balcony" id="balcony">
+                                        <label class="form-check-label facility-label" for="balcony">
+                                            <i class="fas fa-umbrella-beach me-2"></i>Balcony
+                                        </label>
+                                    </div>
+                                    <div class="form-check facility-card">
+                                        <input class="form-check-input" type="checkbox" name="facilities" value="WiFi" id="wifi">
+                                        <label class="form-check-label facility-label" for="wifi">
+                                            <i class="fas fa-wifi me-2"></i>WiFi
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Room Features</label>
+                                <div class="facilities-grid">
+                                    <div class="form-check facility-card">
+                                        <input class="form-check-input" type="checkbox" name="room_features" value="AC" id="ac">
+                                        <label class="form-check-label facility-label" for="ac">
+                                            <i class="fas fa-snowflake me-2"></i>AC
+                                        </label>
+                                    </div>
+                                    <div class="form-check facility-card">
+                                        <input class="form-check-input" type="checkbox" name="room_features" value="Geyser" id="geyser">
+                                        <label class="form-check-label facility-label" for="geyser">
+                                            <i class="fas fa-fire me-2"></i>Geyser
+                                        </label>
+                                    </div>
+                                    <div class="form-check facility-card">
+                                        <input class="form-check-input" type="checkbox" name="room_features" value="Furniture" id="furniture">
+                                        <label class="form-check-label facility-label" for="furniture">
+                                            <i class="fas fa-chair me-2"></i>Furniture
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="section-card">
+                        <h6 class="section-title">
+                            <i class="fas fa-cog me-2 text-info"></i>Additional Information
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">Room Status</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-tag text-muted"></i></span>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="Available">Available</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="Not Available">Not Available</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="availability_date" class="form-label">Availability Date</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-calendar text-muted"></i></span>
+                                    <input type="date" class="form-control" id="availability_date" name="availability_date">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="additional_notes" class="form-label">
+                                <i class="fas fa-sticky-note me-2 text-muted"></i>Additional Notes
+                            </label>
+                            <textarea class="form-control" id="additional_notes" name="additional_notes" rows="3" placeholder="Any additional information about the room..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Save Room
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Room Modal -->
+<div class="modal fade" id="editRoomModal" tabindex="-1" aria-labelledby="editRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="editRoomModalLabel">
+                    <i class="fas fa-edit me-2"></i> Edit Room
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="" id="editRoomForm">
+                <div class="modal-body" id="editRoomModalBody">
+                    <!-- Content will be loaded dynamically -->
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading room details...</p>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-warning text-white">
+                        <i class="fas fa-save me-2"></i> Update Room
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Room Details Modal -->
+<div class="modal fade" id="viewRoomModal" tabindex="-1" aria-labelledby="viewRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="viewRoomModalLabel">
+                    <i class="fas fa-info-circle me-2"></i> Room Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="viewRoomModalBody">
+                <!-- Content will be loaded dynamically -->
+                <div class="text-center py-4">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading room details...</p>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Room selection functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllHeader = document.getElementById('selectAllHeader');
+    const selectAllRooms = document.getElementById('selectAllRooms');
+    const roomCheckboxes = document.querySelectorAll('.room-checkbox');
+    const bulkActionsPanel = document.getElementById('bulkActionsPanel');
+    const selectedCount = document.getElementById('selectedCount');
+    const editRoomButtons = document.querySelectorAll('.edit-room-btn');
+    const viewRoomButtons = document.querySelectorAll('.view-room-btn');
+
+    // Select All functionality
+    function handleSelectAll(checkbox) {
+        const isChecked = checkbox.checked;
+        roomCheckboxes.forEach(cb => {
+            cb.checked = isChecked;
+        });
+        updateBulkActions();
+    }
+
+    selectAllHeader.addEventListener('change', function() {
+        handleSelectAll(this);
+        selectAllRooms.checked = this.checked;
+    });
+
+    selectAllRooms.addEventListener('change', function() {
+        handleSelectAll(this);
+        selectAllHeader.checked = this.checked;
+    });
+
+    // Individual checkbox change
+    roomCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActions);
+    });
+
+    // Update bulk actions panel
+    function updateBulkActions() {
+        const selectedRooms = document.querySelectorAll('.room-checkbox:checked');
+        const count = selectedRooms.length;
+        
+        if (count > 0) {
+            bulkActionsPanel.style.display = 'block';
+            selectedCount.textContent = `${count} room${count > 1 ? 's' : ''} selected`;
+            
+            // Update select all checkboxes state
+            const allChecked = count === roomCheckboxes.length;
+            const someChecked = count > 0 && count < roomCheckboxes.length;
+            
+            selectAllHeader.checked = allChecked;
+            selectAllHeader.indeterminate = someChecked;
+            selectAllRooms.checked = allChecked;
+            selectAllRooms.indeterminate = someChecked;
+        } else {
+            bulkActionsPanel.style.display = 'none';
+            selectAllHeader.checked = false;
+            selectAllHeader.indeterminate = false;
+            selectAllRooms.checked = false;
+            selectAllRooms.indeterminate = false;
+        }
+    }
+
+    // Edit Room functionality
+    editRoomButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const roomId = this.getAttribute('data-room-id');
+            loadRoomForEdit(roomId);
+        });
+    });
+
+    // View Room Details functionality
+    viewRoomButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const roomId = this.getAttribute('data-room-id');
+            loadRoomForView(roomId);
+        });
+    });
+
+    // Load room data for editing
+    function loadRoomForEdit(roomId) {
+        fetch(`/api/room/${roomId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const room = data.room;
+                    
+                    // Create edit form HTML with enhanced styling
+                    const editFormHTML = `
+                        <input type="hidden" name="room_id" value="${room.id}">
+                        
+                        <!-- Basic Information -->
+                        <div class="section-card mb-4">
+                            <h6 class="section-title">
+                                <i class="fas fa-info-circle me-2 text-primary"></i>Basic Information
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_room_number" class="form-label">Room Number *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-hashtag text-muted"></i></span>
+                                        <input type="text" class="form-control" id="edit_room_number" name="room_number" value="${room.room_number}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_floor" class="form-label">Floor *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-building text-muted"></i></span>
+                                        <select class="form-select" id="edit_floor" name="floor" required>
+                                            <option value="Ground" ${room.floor === 'Ground' ? 'selected' : ''}>Ground Floor</option>
+                                            <option value="First" ${room.floor === 'First' ? 'selected' : ''}>First Floor</option>
+                                            <option value="Second" ${room.floor === 'Second' ? 'selected' : ''}>Second Floor</option>
+                                            <option value="Third" ${room.floor === 'Third' ? 'selected' : ''}>Third Floor</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_room_type" class="form-label">Room Type *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-home text-muted"></i></span>
+                                        <select class="form-select" id="edit_room_type" name="room_type" required>
+                                            <option value="">Select Type</option>
+                                            <option value="Single (Female)" ${room.room_type === 'Single (Female)' ? 'selected' : ''}>Single (Female)</option>
+                                            <option value="Sharing (Female)" ${room.room_type === 'Sharing (Female)' ? 'selected' : ''}>Sharing (Female)</option>
+                                            <option value="Suite (Female)" ${room.room_type === 'Suite (Female)' ? 'selected' : ''}>Suite (Female)</option>
+                                            <option value="Deluxe (Female)" ${room.room_type === 'Deluxe (Female)' ? 'selected' : ''}>Deluxe (Female)</option>
+                                            <option value="Single (Male)" ${room.room_type === 'Single (Male)' ? 'selected' : ''}>Single (Male)</option>
+                                            <option value="Sharing (Male)" ${room.room_type === 'Sharing (Male)' ? 'selected' : ''}>Sharing (Male)</option>
+                                            <option value="Suite (Male)" ${room.room_type === 'Suite (Male)' ? 'selected' : ''}>Suite (Male)</option>
+                                            <option value="Deluxe (Male)" ${room.room_type === 'Deluxe (Male)' ? 'selected' : ''}>Deluxe (Male)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_sharing_type" class="form-label">Sharing Type *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-users text-muted"></i></span>
+                                        <select class="form-select" id="edit_sharing_type" name="sharing_type" required>
+                                            <option value="">Select Capacity</option>
+                                            <option value="1" ${room.sharing_type === '1' ? 'selected' : ''}>1 Person</option>
+                                            <option value="2" ${room.sharing_type === '2' ? 'selected' : ''}>2 Persons</option>
+                                            <option value="3" ${room.sharing_type === '3' ? 'selected' : ''}>3 Persons</option>
+                                            <option value="4" ${room.sharing_type === '4' ? 'selected' : ''}>4 Persons</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Information -->
+                        <div class="section-card mb-4">
+                            <h6 class="section-title">
+                                <i class="fas fa-rupee-sign me-2 text-success"></i>Financial Information
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_rent_amount" class="form-label">Rent Amount *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-success">₹</span>
+                                        <input type="number" class="form-control" id="edit_rent_amount" name="rent_amount" value="${room.rent_amount}" step="0.01" min="0" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_security_deposit" class="form-label">Security Deposit *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-warning">₹</span>
+                                        <input type="number" class="form-control" id="edit_security_deposit" name="security_deposit" value="${room.security_deposit}" step="0.01" min="0" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Facilities & Features -->
+                        <div class="section-card mb-4">
+                            <h6 class="section-title">
+                                <i class="fas fa-star me-2 text-warning"></i>Facilities & Features
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Facilities</label>
+                                    <div class="facilities-grid">
+                                        <div class="form-check facility-card">
+                                            <input class="form-check-input" type="checkbox" name="facilities" value="Attached Bath" id="edit_bath" ${room.facilities.includes('Attached Bath') ? 'checked' : ''}>
+                                            <label class="form-check-label facility-label" for="edit_bath">
+                                                <i class="fas fa-bath me-2"></i>Attached Bath
+                                            </label>
+                                        </div>
+                                        <div class="form-check facility-card">
+                                            <input class="form-check-input" type="checkbox" name="facilities" value="Balcony" id="edit_balcony" ${room.facilities.includes('Balcony') ? 'checked' : ''}>
+                                            <label class="form-check-label facility-label" for="edit_balcony">
+                                                <i class="fas fa-umbrella-beach me-2"></i>Balcony
+                                            </label>
+                                        </div>
+                                        <div class="form-check facility-card">
+                                            <input class="form-check-input" type="checkbox" name="facilities" value="WiFi" id="edit_wifi" ${room.facilities.includes('WiFi') ? 'checked' : ''}>
+                                            <label class="form-check-label facility-label" for="edit_wifi">
+                                                <i class="fas fa-wifi me-2"></i>WiFi
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Room Features</label>
+                                    <div class="facilities-grid">
+                                        <div class="form-check facility-card">
+                                            <input class="form-check-input" type="checkbox" name="room_features" value="AC" id="edit_ac" ${room.room_features.includes('AC') ? 'checked' : ''}>
+                                            <label class="form-check-label facility-label" for="edit_ac">
+                                                <i class="fas fa-snowflake me-2"></i>AC
+                                            </label>
+                                        </div>
+                                        <div class="form-check facility-card">
+                                            <input class="form-check-input" type="checkbox" name="room_features" value="Geyser" id="edit_geyser" ${room.room_features.includes('Geyser') ? 'checked' : ''}>
+                                            <label class="form-check-label facility-label" for="edit_geyser">
+                                                <i class="fas fa-fire me-2"></i>Geyser
+                                            </label>
+                                        </div>
+                                        <div class="form-check facility-card">
+                                            <input class="form-check-input" type="checkbox" name="room_features" value="Furniture" id="edit_furniture" ${room.room_features.includes('Furniture') ? 'checked' : ''}>
+                                            <label class="form-check-label facility-label" for="edit_furniture">
+                                                <i class="fas fa-chair me-2"></i>Furniture
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="section-card">
+                            <h6 class="section-title">
+                                <i class="fas fa-cog me-2 text-info"></i>Additional Information
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_status" class="form-label">Room Status</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-tag text-muted"></i></span>
+                                        <select class="form-select" id="edit_status" name="status">
+                                            <option value="Available" ${room.status === 'Available' ? 'selected' : ''}>Available</option>
+                                            <option value="Maintenance" ${room.status === 'Maintenance' ? 'selected' : ''}>Maintenance</option>
+                                            <option value="Not Available" ${room.status === 'Not Available' ? 'selected' : ''}>Not Available</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_availability_date" class="form-label">Availability Date</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-calendar text-muted"></i></span>
+                                        <input type="date" class="form-control" id="edit_availability_date" name="availability_date" value="${room.availability_date}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="edit_additional_notes" class="form-label">
+                                    <i class="fas fa-sticky-note me-2 text-muted"></i>Additional Notes
+                                </label>
+                                <textarea class="form-control" id="edit_additional_notes" name="additional_notes" rows="3">${room.additional_notes || ''}</textarea>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('editRoomModalBody').innerHTML = editFormHTML;
+                    document.getElementById('editRoomForm').action = `/edit_room/${room.id}`;
+                    
+                    // Show the modal
+                    const editModal = new bootstrap.Modal(document.getElementById('editRoomModal'));
+                    editModal.show();
+                } else {
+                    showNotification('Error loading room details: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error loading room details', 'error');
+            });
+    }
+
+    // Load room data for viewing
+    function loadRoomForView(roomId) {
+        fetch(`/api/room/${roomId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const room = data.room;
+                    
+                    // Create view HTML with enhanced styling
+                    const viewHTML = `
+                        <div class="room-details">
+                            <!-- Room Header -->
+                            <div class="room-header text-center mb-4 p-4 bg-light rounded">
+                                <h4 class="text-primary mb-2">Room ${room.room_number}</h4>
+                                <div class="room-status-badge">
+                                    ${room.status === 'Available' ? '<span class="badge bg-success rounded-pill px-3 py-2">Available</span>' : 
+                                      room.status === 'Occupied' ? '<span class="badge bg-primary rounded-pill px-3 py-2">Occupied</span>' : 
+                                      room.status === 'Maintenance' ? '<span class="badge bg-warning rounded-pill px-3 py-2">Maintenance</span>' : 
+                                      '<span class="badge bg-danger rounded-pill px-3 py-2">Not Available</span>'}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Room Information -->
+                                <div class="col-md-6">
+                                    <div class="info-card mb-4">
+                                        <h6 class="card-title bg-primary text-white p-3 rounded-top">
+                                            <i class="fas fa-info-circle me-2"></i>Room Information
+                                        </h6>
+                                        <div class="card-body">
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Room Number:</span>
+                                                <span class="text-primary">${room.room_number}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Floor:</span>
+                                                <span class="badge bg-light text-dark">${room.floor}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Room Type:</span>
+                                                <span>${room.room_type}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Sharing Capacity:</span>
+                                                <span class="badge bg-info text-white">${room.sharing_type} Person</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between py-2">
+                                                <span class="fw-bold">Created At:</span>
+                                                <span class="text-muted">${room.created_at}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Financial Information -->
+                                <div class="col-md-6">
+                                    <div class="info-card mb-4">
+                                        <h6 class="card-title bg-success text-white p-3 rounded-top">
+                                            <i class="fas fa-rupee-sign me-2"></i>Financial Information
+                                        </h6>
+                                        <div class="card-body">
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Rent Amount:</span>
+                                                <span class="text-success fw-bold">₹${parseFloat(room.rent_amount).toFixed(2)}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Security Deposit:</span>
+                                                <span class="text-warning fw-bold">₹${parseFloat(room.security_deposit).toFixed(2)}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Availability Date:</span>
+                                                <span class="${room.availability_date ? 'text-info' : 'text-muted'}">${room.availability_date || 'Not specified'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            ${room.tenants && room.tenants.length > 0 ? `
+                            <!-- Current Tenants -->
+                            <div class="info-card mb-4">
+                                <h6 class="card-title bg-info text-white p-3 rounded-top">
+                                    <i class="fas fa-users me-2"></i>Current Tenants 
+                                    <span class="badge bg-light text-dark ms-2">${room.tenants.length}/${room.sharing_type}</span>
+                                </h6>
+                                <div class="card-body">
+                                    <div class="row">
+                                        ${room.tenants.map((tenant, index) => `
+                                            <div class="col-md-6 mb-3">
+                                                <div class="tenant-card border rounded p-3 bg-light">
+                                                    <div class="d-flex justify-content-between align-items-start">
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-2 text-primary">
+                                                                <i class="fas fa-user me-2"></i>${tenant.full_name}
+                                                            </h6>
+                                                            <div class="tenant-details">
+                                                                <small class="text-muted d-block">
+                                                                    <i class="fas fa-phone me-1"></i>${tenant.phone_number}
+                                                                </small>
+                                                                ${tenant.bed_number ? `
+                                                                <small class="text-muted d-block">
+                                                                    <i class="fas fa-bed me-1"></i>Bed ${tenant.bed_number}
+                                                                </small>
+                                                                ` : ''}
+                                                                <small class="text-muted d-block">
+                                                                    <i class="fas fa-calendar me-1"></i>Since ${tenant.move_in_date}
+                                                                </small>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <a href="/tenant_details/${tenant.id}" 
+                                                               class="btn btn-sm btn-outline-primary"
+                                                               target="_blank"
+                                                               title="View Tenant Details">
+                                                                <i class="fas fa-external-link-alt"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                            ` : room.status === 'Occupied' ? `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Room is marked as occupied but no active tenants found.
+                            </div>
+                            ` : ''}
+                            
+                            <!-- Facilities & Features -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-card mb-4">
+                                        <h6 class="card-title bg-warning text-white p-3 rounded-top">
+                                            <i class="fas fa-star me-2"></i>Facilities
+                                        </h6>
+                                        <div class="card-body">
+                                            ${room.facilities ? `
+                                                <div class="facilities-tags">
+                                                    ${room.facilities.split(', ').map(facility => 
+                                                        `<span class="badge bg-light text-dark border me-1 mb-1 px-3 py-2">${facility}</span>`
+                                                    ).join('')}
+                                                </div>
+                                            ` : '<p class="text-muted mb-0">No facilities</p>'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-card mb-4">
+                                        <h6 class="card-title bg-secondary text-white p-3 rounded-top">
+                                            <i class="fas fa-cog me-2"></i>Room Features
+                                        </h6>
+                                        <div class="card-body">
+                                            ${room.room_features ? `
+                                                <div class="features-tags">
+                                                    ${room.room_features.split(', ').map(feature => 
+                                                        `<span class="badge bg-light text-dark border me-1 mb-1 px-3 py-2">${feature}</span>`
+                                                    ).join('')}
+                                                </div>
+                                            ` : '<p class="text-muted mb-0">No features</p>'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${room.additional_notes ? `
+                            <!-- Additional Notes -->
+                            <div class="info-card">
+                                <h6 class="card-title bg-dark text-white p-3 rounded-top">
+                                    <i class="fas fa-sticky-note me-2"></i>Additional Notes
+                                </h6>
+                                <div class="card-body">
+                                    <p class="mb-0 text-muted">${room.additional_notes}</p>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    
+                    document.getElementById('viewRoomModalBody').innerHTML = viewHTML;
+                    
+                    // Show the modal
+                    const viewModal = new bootstrap.Modal(document.getElementById('viewRoomModal'));
+                    viewModal.show();
+                } else {
+                    showNotification('Error loading room details: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error loading room details', 'error');
+            });
+    }
+
+    // Bulk delete function
+    window.deleteSelectedRooms = function() {
+        const selectedRooms = Array.from(document.querySelectorAll('.room-checkbox:checked'))
+            .map(cb => ({
+                id: cb.value,
+                number: cb.getAttribute('data-room-number')
+            }));
+        
+        if (selectedRooms.length === 0) {
+            showNotification('Please select at least one room to delete.', 'warning');
+            return;
+        }
+
+        const roomNumbers = selectedRooms.map(room => room.number).join(', ');
+        
+        if (confirm(`Are you sure you want to delete the following rooms?\n${roomNumbers}\n\nThis action cannot be undone!`)) {
+            // Send AJAX request to delete multiple rooms
+            fetch('/delete_rooms_bulk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    room_ids: selectedRooms.map(room => room.id)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred while deleting rooms.', 'error');
+            });
+        }
+    };
+
+    // Bulk status update function
+    window.bulkUpdateStatus = function(status) {
+        const selectedRooms = Array.from(document.querySelectorAll('.room-checkbox:checked'))
+            .map(cb => ({
+                id: cb.value,
+                number: cb.getAttribute('data-room-number')
+            }));
+        
+        if (selectedRooms.length === 0) {
+            showNotification('Please select at least one room.', 'warning');
+            return;
+        }
+
+        const roomNumbers = selectedRooms.map(room => room.number).join(', ');
+        
+        if (confirm(`Are you sure you want to mark the following rooms as "${status}"?\n${roomNumbers}`)) {
+            // Send AJAX request to update room statuses
+            fetch('/update_rooms_status_bulk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    room_ids: selectedRooms.map(room => room.id),
+                    status: status
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Successfully updated ${data.updated_count} room(s) to "${status}" status!`, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred while updating room statuses.', 'error');
+            });
+        }
+    };
+
+    // Notification function
+    function showNotification(message, type = 'info') {
+        // Remove any existing notifications
+        const existingAlerts = document.querySelectorAll('.custom-notification');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Create new notification
+        const alertDiv = document.createElement('div');
+        const bgColor = type === 'success' ? 'success' : type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'info';
+        
+        alertDiv.className = `alert alert-${bgColor} custom-notification alert-dismissible fade show`;
+        alertDiv.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                <span>${message}</span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentElement) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+
+    // Set today's date as default for availability date
+    const today = new Date().toISOString().split('T')[0];
+    if (document.getElementById('availability_date')) {
+        document.getElementById('availability_date').value = today;
+    }
+
+    // Room type change handler
+    const roomTypeSelect = document.getElementById('room_type');
+    if (roomTypeSelect) {
+        roomTypeSelect.addEventListener('change', function() {
+            const roomType = this.value;
+            const sharingSelect = document.getElementById('sharing_type');
+            
+            // Reset sharing options
+            sharingSelect.innerHTML = '<option value="">Select Capacity</option>' +
+                '<option value="1">1 Person</option>' +
+                '<option value="2">2 Persons</option>' +
+                '<option value="3">3 Persons</option>' +
+                '<option value="4">4 Persons</option>';
+            
+            // If it's a single room, auto-select 1 person
+            if (roomType.includes('Single')) {
+                sharingSelect.value = '1';
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* Custom Styles for Enhanced Room Management */
+.section-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    border-left: 4px solid #007bff;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.facilities-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.facility-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    margin: 0;
+}
+
+.facility-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+}
+
+.facility-label {
+    cursor: pointer;
+    font-weight: 500;
+    color: #495057;
+    width: 100%;
+}
+
+.facility-card .form-check-input:checked ~ .facility-label {
+    color: #007bff;
+}
+
+.info-card {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.info-card .card-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.room-row:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+.tenant-card {
+    transition: all 0.3s ease;
+    border-left: 3px solid #17a2b8 !important;
+}
+
+.tenant-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.facilities-tags .badge,
+.features-tags .badge {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.empty-state {
+    padding: 3rem 1rem;
+}
+
+.room-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.room-header h4 {
+    color: white !important;
+}
+
+.form-check-input:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.input-group-text {
+    border-right: none;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.1);
+}
+
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.modal-content {
+    border-radius: 12px;
+}
+
+.modal-header {
+    border-radius: 12px 12px 0 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+}
+
+.badge.rounded-pill {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Custom scrollbar */
+.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Animation for modal entrance */
+.modal.fade .modal-dialog {
+    transform: translateY(-50px);
+    transition: transform 0.3s ease-out;
+}
+
+.modal.show .modal-dialog {
+    transform: translateY(0);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .section-card {
+        padding: 1rem;
+    }
+    
+    .facilities-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.4rem;
+    }
+}
+
+/* Loading animation */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.loading-pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+</style>
+{% endblock %}

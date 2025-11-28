@@ -1,0 +1,1474 @@
+{% extends "base.html" %}
+
+{% block title %}Tenant Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">👥 Tenant Management</h1>
+    <div>
+        <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#addTenantModal">
+            <i class="fas fa-user-plus me-2"></i> Add New Tenant
+        </button>
+    </div>
+</div>
+
+<!-- Quick Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2" style="border-left: 4px solid #007bff !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Tenants</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_tenants }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-primary opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2" style="border-left: 4px solid #28a745 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Active Tenants</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ tenants|selectattr('status', 'equalto', 'Active')|list|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-check fa-2x text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2" style="border-left: 4px solid #17a2b8 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Available Rooms</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.vacant_rooms }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-door-open fa-2x text-info opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Tenant Modal -->
+<div class="modal fade" id="addTenantModal" tabindex="-1" aria-labelledby="addTenantModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addTenantModalLabel">
+                    <i class="fas fa-user-plus me-2"></i> Add New Tenant
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_tenant') }}" id="tenantForm">
+                <div class="modal-body">
+                    <!-- Personal Information -->
+                    <div class="section-card mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-user me-2 text-primary"></i>Personal Information
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="full_name" class="form-label">Full Name *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-user text-muted"></i></span>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" placeholder="Enter full name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="gender" class="form-label">Gender *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-venus-mars text-muted"></i></span>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-calendar text-muted"></i></span>
+                                    <input type="date" class="form-control" id="date_of_birth" name="date_of_birth">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone_number" class="form-label">Phone Number *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-phone text-muted"></i></span>
+                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" placeholder="10-digit mobile number" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-envelope text-muted"></i></span>
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="email@example.com">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="emergency_contact" class="form-label">Emergency Contact *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-phone-alt text-muted"></i></span>
+                                    <input type="tel" class="form-control" id="emergency_contact" name="emergency_contact" placeholder="Emergency contact number" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Identification Details -->
+                    <div class="section-card mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-id-card me-2 text-warning"></i>Identification Details
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="aadhaar_number" class="form-label">Aadhaar Number *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-id-card text-muted"></i></span>
+                                    <input type="text" class="form-control" id="aadhaar_number" name="aadhaar_number" maxlength="12" placeholder="12-digit Aadhaar number" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="pan_number" class="form-label">PAN Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-credit-card text-muted"></i></span>
+                                    <input type="text" class="form-control" id="pan_number" name="pan_number" maxlength="10" placeholder="10-digit PAN number">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Permanent Address -->
+                    <div class="section-card mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-home me-2 text-info"></i>Permanent Address
+                        </h6>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="address_line1" class="form-label">Address Line 1 *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-map-marker-alt text-muted"></i></span>
+                                    <input type="text" class="form-control" id="address_line1" name="address_line1" placeholder="House no, Street, Area" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="address_line2" class="form-label">Address Line 2</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-map-marker-alt text-muted"></i></span>
+                                    <input type="text" class="form-control" id="address_line2" name="address_line2" placeholder="Landmark, Locality">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">City *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-city text-muted"></i></span>
+                                    <input type="text" class="form-control" id="city" name="city" placeholder="City name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="state" class="form-label">State *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-flag text-muted"></i></span>
+                                    <select class="form-select" id="state" name="state" required>
+                                        <option value="">Select State</option>
+                                        <option value="Maharashtra">Maharashtra</option>
+                                        <option value="Delhi">Delhi</option>
+                                        <option value="Karnataka">Karnataka</option>
+                                        <option value="Tamil Nadu">Tamil Nadu</option>
+                                        <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                        <option value="Gujarat">Gujarat</option>
+                                        <option value="Rajasthan">Rajasthan</option>
+                                        <option value="Punjab">Punjab</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="pin_code" class="form-label">PIN Code *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-map-pin text-muted"></i></span>
+                                    <input type="text" class="form-control" id="pin_code" name="pin_code" placeholder="6-digit PIN code" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Room Allocation & Agreement -->
+                    <div class="section-card">
+                        <h6 class="section-title">
+                            <i class="fas fa-bed me-2 text-success"></i>Room Allocation & Agreement
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="room_id" class="form-label">Select Room *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-door-open text-muted"></i></span>
+                                    <select class="form-select" id="room_id" name="room_id" required>
+                                        <option value="">Select Room</option>
+                                        {% for room in available_rooms %}
+                                        {% set current_tenants = room.tenants|selectattr('status', 'equalto', 'Active')|list %}
+                                        {% set available_beds = room.sharing_type|int - current_tenants|length %}
+                                        <option value="{{ room.id }}" data-rent="{{ room.rent_amount }}" data-available="{{ available_beds }}">
+                                            Room {{ room.room_number }} - {{ room.room_type }} ({{ available_beds }} available) - ₹{{ "%.2f"|format(room.rent_amount) }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-text" id="roomDetails"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="bed_number" class="form-label">Bed Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-bed text-muted"></i></span>
+                                    <input type="text" class="form-control" id="bed_number" name="bed_number" placeholder="A, B, C, etc.">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="move_in_date" class="form-label">Move-in Date *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-calendar-day text-muted"></i></span>
+                                    <input type="date" class="form-control" id="move_in_date" name="move_in_date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="agreement_period" class="form-label">Agreement Period *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-file-contract text-muted"></i></span>
+                                    <select class="form-select" id="agreement_period" name="agreement_period" required>
+                                        <option value="6">6 Months</option>
+                                        <option value="11" selected>11 Months</option>
+                                        <option value="12">12 Months</option>
+                                        <option value="24">24 Months</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="monthly_rent" class="form-label">Monthly Rent *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-success">₹</span>
+                                    <input type="number" class="form-control" id="monthly_rent" name="monthly_rent" step="0.01" min="0" placeholder="0.00" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="security_deposit" class="form-label">Security Deposit *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-warning">₹</span>
+                                    <input type="number" class="form-control" id="security_deposit" name="security_deposit" step="0.01" min="0" placeholder="0.00" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Save Tenant
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- All Tenants Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="card-title mb-2 mb-md-0 text-primary">
+                    <i class="fas fa-list me-2"></i> All Tenants
+                    <span class="badge bg-primary ms-2" id="tenantCount">{{ tenants|length }}</span>
+                </h5>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-md-end align-items-center gap-2">
+                    <!-- Search Box -->
+                    <div class="search-box" style="max-width: 300px;">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                            <input type="text" id="tenantSearch" class="form-control border-start-0" 
+                                   placeholder="Search tenants...">
+                            <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Clear search">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Buttons -->
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary active filter-btn" data-filter="all" title="All tenants">
+                            All
+                        </button>
+                        <button type="button" class="btn btn-outline-success filter-btn" data-filter="active" title="Active tenants">
+                            Active
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary filter-btn" data-filter="inactive" title="Inactive tenants">
+                            Inactive
+                        </button>
+                    </div>
+                    
+                    <!-- Export Button -->
+                    <button class="btn btn-sm btn-outline-success" id="exportBtn" title="Export to Excel">
+                        <i class="fas fa-file-excel"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="tenantsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Contact</th>
+                        <th>Room</th>
+                        <th>Rent</th>
+                        <th>Move-in Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tenantsTableBody">
+                    {% for tenant in tenants %}
+                    <tr class="tenant-row" data-tenant-name="{{ tenant.full_name|lower }}" 
+                        data-tenant-phone="{{ tenant.phone_number }}" 
+                        data-tenant-email="{{ tenant.email|lower if tenant.email else '' }}" 
+                        data-tenant-room="{{ tenant.room.room_number }}" 
+                        data-tenant-status="{{ tenant.status|lower }}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle bg-primary text-white me-3">
+                                    {{ tenant.full_name[0] }}
+                                </div>
+                                <div>
+                                    <strong class="text-primary">{{ tenant.full_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ tenant.gender }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>{{ tenant.phone_number }}</strong>
+                                <br>
+                                <small class="text-muted">{{ tenant.email or 'No email' }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">Room {{ tenant.room.room_number }}</span>
+                            <br>
+                            <small class="text-muted">{{ tenant.room.room_type }}</small>
+                        </td>
+                        <td class="fw-bold text-success">₹{{ "%.2f"|format(tenant.monthly_rent) }}</td>
+                        <td>
+                            <span class="text-muted">{{ tenant.move_in_date.strftime('%d %b %Y') }}</span>
+                            <br>
+                            <small class="text-muted">{{ tenant.agreement_period }} months</small>
+                        </td>
+                        <td>
+                            {% if tenant.status == 'Active' %}
+                                <span class="badge bg-success rounded-pill">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary rounded-pill">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary view-tenant-btn rounded-start" 
+                                        title="View Details" 
+                                        data-tenant-id="{{ tenant.id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-warning edit-tenant-btn" 
+                                        title="Edit Tenant" 
+                                        data-tenant-id="{{ tenant.id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger remove-tenant-btn rounded-end" 
+                                        title="Remove Tenant" 
+                                        data-tenant-id="{{ tenant.id }}"
+                                        data-tenant-name="{{ tenant.full_name }}">
+                                    <i class="fas fa-user-times"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">No tenants found</h5>
+                                <p class="text-muted">Get started by adding your first tenant</p>
+                                <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addTenantModal">
+                                    <i class="fas fa-user-plus me-2"></i>Add Your First Tenant
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- View Tenant Modal -->
+<div class="modal fade" id="viewTenantModal" tabindex="-1" aria-labelledby="viewTenantModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="viewTenantModalLabel">
+                    <i class="fas fa-eye me-2"></i> Tenant Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="viewTenantModalBody">
+                <!-- Content will be loaded dynamically -->
+                <div class="text-center py-4">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading tenant details...</p>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Tenant Modal -->
+<div class="modal fade" id="editTenantModal" tabindex="-1" aria-labelledby="editTenantModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="editTenantModalLabel">
+                    <i class="fas fa-edit me-2"></i> Edit Tenant
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="" id="editTenantForm">
+                <div class="modal-body" id="editTenantModalBody">
+                    <!-- Content will be loaded dynamically -->
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading tenant details...</p>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-warning text-white">
+                        <i class="fas fa-save me-2"></i> Update Tenant
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteTenantModal" tabindex="-1" aria-labelledby="deleteTenantModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteTenantModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                    <h5 class="text-danger">Are you sure?</h5>
+                </div>
+                <p class="text-center">You are about to delete tenant: <strong id="deleteTenantName"></strong></p>
+                <p class="text-center text-muted small">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    This action cannot be undone. All associated complaints and payments will also be deleted.
+                </p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-2"></i> Delete Tenant
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-fill rent amount when room is selected
+    const roomSelect = document.getElementById('room_id');
+    const rentInput = document.getElementById('monthly_rent');
+    const depositInput = document.getElementById('security_deposit');
+    const roomDetails = document.getElementById('roomDetails');
+    
+    roomSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const rentAmount = selectedOption.getAttribute('data-rent');
+        const availableBeds = selectedOption.getAttribute('data-available');
+        const roomId = selectedOption.value;
+        
+        if (rentAmount) {
+            rentInput.value = rentAmount;
+            depositInput.value = (parseFloat(rentAmount) * 2).toFixed(2);
+        }
+        
+        if (roomId) {
+            // Fetch room details
+            fetch(`/api/room_details/${roomId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const room = data.room;
+                        roomDetails.innerHTML = `
+                            <div class="room-info mt-2 p-2 bg-light rounded">
+                                <small class="text-muted">
+                                    <strong>Room ${room.room_number}</strong> | ${room.room_type} | 
+                                    ${room.sharing_type} Person | ${room.available_beds} bed(s) available
+                                </small>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching room details:', error);
+                });
+        } else {
+            roomDetails.innerHTML = '';
+        }
+    });
+    
+    // Set move-in date to today if empty
+    const moveInDate = document.getElementById('move_in_date');
+    if (!moveInDate.value) {
+        moveInDate.valueAsDate = new Date();
+    }
+    
+    // Set date of birth max to today
+    const dateOfBirth = document.getElementById('date_of_birth');
+    if (dateOfBirth) {
+        dateOfBirth.max = new Date().toISOString().split('T')[0];
+    }
+    
+    // Phone number validation
+    const phoneInput = document.getElementById('phone_number');
+    const emergencyContactInput = document.getElementById('emergency_contact');
+    
+    function validatePhoneNumber(input) {
+        const value = input.value.replace(/\D/g, '');
+        if (value.length !== 10) {
+            input.classList.add('is-invalid');
+        } else {
+            input.classList.remove('is-invalid');
+        }
+    }
+    
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            validatePhoneNumber(this);
+        });
+    }
+    
+    if (emergencyContactInput) {
+        emergencyContactInput.addEventListener('input', function() {
+            validatePhoneNumber(this);
+        });
+    }
+    
+    // Aadhaar number validation
+    const aadhaarInput = document.getElementById('aadhaar_number');
+    if (aadhaarInput) {
+        aadhaarInput.addEventListener('input', function() {
+            const value = this.value.replace(/\D/g, '');
+            if (value.length !== 12) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
+    
+    // View tenant functionality
+    const viewButtons = document.querySelectorAll('.view-tenant-btn');
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tenantId = this.getAttribute('data-tenant-id');
+            loadTenantForView(tenantId);
+        });
+    });
+    
+    // Edit tenant functionality
+    const editButtons = document.querySelectorAll('.edit-tenant-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tenantId = this.getAttribute('data-tenant-id');
+            loadTenantForEdit(tenantId);
+        });
+    });
+
+    // Delete tenant functionality
+    const deleteButtons = document.querySelectorAll('.remove-tenant-btn');
+    let currentDeleteTenantId = null;
+    let currentDeleteTenantName = null;
+
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            currentDeleteTenantId = this.getAttribute('data-tenant-id');
+            currentDeleteTenantName = this.getAttribute('data-tenant-name');
+            
+            // Show confirmation modal
+            document.getElementById('deleteTenantName').textContent = currentDeleteTenantName;
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteTenantModal'));
+            deleteModal.show();
+        });
+    });
+
+    // Confirm delete button
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (currentDeleteTenantId) {
+            deleteTenant(currentDeleteTenantId, currentDeleteTenantName);
+        }
+    });
+
+    // Delete tenant function
+    function deleteTenant(tenantId, tenantName) {
+        // Show loading state
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Deleting...';
+        deleteBtn.disabled = true;
+
+        fetch(`/remove_tenant/${tenantId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                
+                // Close modal
+                const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteTenantModal'));
+                deleteModal.hide();
+                
+                // Reload page after a short delay to show updated data
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification('Error: ' + data.error, 'error');
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while deleting the tenant.', 'error');
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+        });
+    }
+
+    // Handle edit form submission with AJAX
+    const editTenantForm = document.getElementById('editTenantForm');
+    if (editTenantForm) {
+        editTenantForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+            
+            const formData = new FormData(this);
+            const tenantId = formData.get('tenant_id');
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Updating...';
+            submitBtn.disabled = true;
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    
+                    // Close modal after success
+                    const editModal = bootstrap.Modal.getInstance(document.getElementById('editTenantModal'));
+                    editModal.hide();
+                    
+                    // Reload page after a short delay to show updated data
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showNotification('Error: ' + data.error, 'error');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred while updating the tenant.', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+    }
+
+    // Search functionality
+    const tenantSearch = document.getElementById('tenantSearch');
+    const clearSearch = document.getElementById('clearSearch');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const tenantRows = document.querySelectorAll('.tenant-row');
+    const tenantCount = document.getElementById('tenantCount');
+    
+    let currentFilter = 'all';
+    let currentSearchTerm = '';
+
+    // Search function
+    function performSearch() {
+        const searchTerm = currentSearchTerm.toLowerCase();
+        let visibleCount = 0;
+
+        tenantRows.forEach(row => {
+            const tenantName = row.getAttribute('data-tenant-name');
+            const tenantPhone = row.getAttribute('data-tenant-phone');
+            const tenantEmail = row.getAttribute('data-tenant-email');
+            const tenantRoom = row.getAttribute('data-tenant-room');
+            const tenantStatus = row.getAttribute('data-tenant-status');
+
+            // Check if row matches search term
+            const matchesSearch = searchTerm === '' || 
+                tenantName.includes(searchTerm) ||
+                tenantPhone.includes(searchTerm) ||
+                tenantEmail.includes(searchTerm) ||
+                tenantRoom.includes(searchTerm);
+
+            // Check if row matches filter
+            const matchesFilter = currentFilter === 'all' || 
+                tenantStatus === currentFilter;
+
+            // Show/hide row based on search and filter
+            if (matchesSearch && matchesFilter) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Update tenant count
+        tenantCount.textContent = visibleCount;
+
+        // Show no results message if needed
+        showNoResultsMessage(visibleCount === 0);
+    }
+
+    // Show no results message
+    function showNoResultsMessage(show) {
+        let noResultsRow = document.getElementById('noResultsRow');
+        
+        if (show && !noResultsRow) {
+            noResultsRow = document.createElement('tr');
+            noResultsRow.id = 'noResultsRow';
+            noResultsRow.innerHTML = `
+                <td colspan="7" class="text-center text-muted py-5">
+                    <div class="empty-state">
+                        <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">No tenants found</h5>
+                        <p class="text-muted">Try adjusting your search or filter criteria</p>
+                        <button class="btn btn-primary mt-2" id="clearSearchFilters">
+                            <i class="fas fa-times me-2"></i>Clear Search & Filters
+                        </button>
+                    </div>
+                </td>
+            `;
+            document.getElementById('tenantsTableBody').appendChild(noResultsRow);
+            
+            // Add event listener to clear search button
+            document.getElementById('clearSearchFilters').addEventListener('click', function() {
+                clearSearchAndFilters();
+            });
+        } else if (!show && noResultsRow) {
+            noResultsRow.remove();
+        }
+    }
+
+    // Clear search and filters
+    function clearSearchAndFilters() {
+        tenantSearch.value = '';
+        currentSearchTerm = '';
+        currentFilter = 'all';
+        
+        // Update filter buttons
+        filterButtons.forEach(btn => {
+            if (btn.getAttribute('data-filter') === 'all') {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        
+        performSearch();
+    }
+
+    // Search input event
+    if (tenantSearch) {
+        tenantSearch.addEventListener('input', function() {
+            currentSearchTerm = this.value;
+            performSearch();
+        });
+    }
+
+    // Clear search button
+    if (clearSearch) {
+        clearSearch.addEventListener('click', function() {
+            tenantSearch.value = '';
+            currentSearchTerm = '';
+            performSearch();
+            tenantSearch.focus();
+        });
+    }
+
+    // Filter buttons
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            
+            // Update active state
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            currentFilter = filter;
+            performSearch();
+        });
+    });
+
+    // Initialize search
+    performSearch();
+
+    // Export functionality
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            exportToExcel();
+        });
+    }
+
+    // Export to Excel function
+    function exportToExcel() {
+        // Get visible tenants data
+        const visibleTenants = [];
+        document.querySelectorAll('.tenant-row').forEach(row => {
+            if (row.style.display !== 'none') {
+                const name = row.querySelector('strong.text-primary').textContent;
+                const phone = row.querySelector('td:nth-child(2) strong').textContent;
+                const email = row.querySelector('td:nth-child(2) small').textContent;
+                const room = row.querySelector('td:nth-child(3) .badge').textContent;
+                const rent = row.querySelector('td:nth-child(4)').textContent;
+                const moveInDate = row.querySelector('td:nth-child(5) span').textContent;
+                const status = row.querySelector('td:nth-child(6) .badge').textContent;
+                
+                visibleTenants.push({
+                    name,
+                    phone,
+                    email,
+                    room,
+                    rent,
+                    moveInDate,
+                    status
+                });
+            }
+        });
+
+        // Create CSV content
+        let csvContent = "Name,Phone,Email,Room,Rent,Move-in Date,Status\n";
+        visibleTenants.forEach(tenant => {
+            csvContent += `"${tenant.name}","${tenant.phone}","${tenant.email}","${tenant.room}","${tenant.rent}","${tenant.moveInDate}","${tenant.status}"\n`;
+        });
+
+        // Create and download file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `tenants_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showNotification('Tenant data exported successfully!', 'success');
+    }
+
+    // Load tenant data for viewing
+    function loadTenantForView(tenantId) {
+        fetch(`/api/tenant/${tenantId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const tenant = data.tenant;
+                    
+                    // Create view HTML
+                    const viewHTML = `
+                        <div class="tenant-details">
+                            <!-- Tenant Header -->
+                            <div class="tenant-header text-center mb-4 p-4 bg-light rounded">
+                                <div class="avatar-circle-lg bg-primary text-white mx-auto mb-3">
+                                    ${tenant.full_name[0].toUpperCase()}
+                                </div>
+                                <h4 class="text-primary mb-2">${tenant.full_name}</h4>
+                                <div class="tenant-status-badge">
+                                    ${tenant.status === 'Active' ? 
+                                        '<span class="badge bg-success rounded-pill px-3 py-2">Active</span>' : 
+                                        '<span class="badge bg-secondary rounded-pill px-3 py-2">Inactive</span>'}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Personal Information -->
+                                <div class="col-md-6">
+                                    <div class="info-card mb-4">
+                                        <h6 class="card-title bg-primary text-white p-3 rounded-top">
+                                            <i class="fas fa-user me-2"></i>Personal Information
+                                        </h6>
+                                        <div class="card-body">
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Full Name:</span>
+                                                <span class="text-primary">${tenant.full_name}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Gender:</span>
+                                                <span>${tenant.gender}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Date of Birth:</span>
+                                                <span class="${tenant.date_of_birth ? 'text-info' : 'text-muted'}">${tenant.date_of_birth || 'Not specified'}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between py-2">
+                                                <span class="fw-bold">Aadhaar Number:</span>
+                                                <span class="text-muted">${tenant.aadhaar_number}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Contact Information -->
+                                <div class="col-md-6">
+                                    <div class="info-card mb-4">
+                                        <h6 class="card-title bg-success text-white p-3 rounded-top">
+                                            <i class="fas fa-phone me-2"></i>Contact Information
+                                        </h6>
+                                        <div class="card-body">
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Phone Number:</span>
+                                                <span class="text-success">${tenant.phone_number}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Email:</span>
+                                                <span class="${tenant.email ? 'text-info' : 'text-muted'}">${tenant.email || 'Not specified'}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Emergency Contact:</span>
+                                                <span class="text-warning">${tenant.emergency_contact}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between py-2">
+                                                <span class="fw-bold">PAN Number:</span>
+                                                <span class="${tenant.pan_number ? 'text-info' : 'text-muted'}">${tenant.pan_number || 'Not specified'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Room & Agreement Information -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-card mb-4">
+                                        <h6 class="card-title bg-warning text-white p-3 rounded-top">
+                                            <i class="fas fa-bed me-2"></i>Room Information
+                                        </h6>
+                                        <div class="card-body">
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Room Number:</span>
+                                                <span class="badge bg-light text-dark">${tenant.room_number}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Room Type:</span>
+                                                <span>${tenant.room_type}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Bed Number:</span>
+                                                <span class="${tenant.bed_number ? 'text-info' : 'text-muted'}">${tenant.bed_number || 'Not assigned'}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between py-2">
+                                                <span class="fw-bold">Move-in Date:</span>
+                                                <span class="text-muted">${tenant.move_in_date}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="info-card mb-4">
+                                        <h6 class="card-title bg-info text-white p-3 rounded-top">
+                                            <i class="fas fa-file-contract me-2"></i>Agreement & Financial
+                                        </h6>
+                                        <div class="card-body">
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Monthly Rent:</span>
+                                                <span class="text-success fw-bold">₹${parseFloat(tenant.monthly_rent).toFixed(2)}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Security Deposit:</span>
+                                                <span class="text-warning fw-bold">₹${parseFloat(tenant.security_deposit_paid).toFixed(2)}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Agreement Period:</span>
+                                                <span class="text-muted">${tenant.agreement_period} months</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Address Information -->
+                            <div class="info-card">
+                                <h6 class="card-title bg-dark text-white p-3 rounded-top">
+                                    <i class="fas fa-home me-2"></i>Permanent Address
+                                </h6>
+                                <div class="card-body">
+                                    <p class="mb-2"><strong>Address:</strong> ${tenant.address_line1}${tenant.address_line2 ? ', ' + tenant.address_line2 : ''}</p>
+                                    <p class="mb-2"><strong>City:</strong> ${tenant.city}</p>
+                                    <p class="mb-2"><strong>State:</strong> ${tenant.state}</p>
+                                    <p class="mb-0"><strong>PIN Code:</strong> ${tenant.pin_code}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('viewTenantModalBody').innerHTML = viewHTML;
+                    
+                    // Show the modal
+                    const viewModal = new bootstrap.Modal(document.getElementById('viewTenantModal'));
+                    viewModal.show();
+                } else {
+                    showNotification('Error loading tenant details: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error loading tenant details', 'error');
+            });
+    }
+    
+    // Load tenant data for editing
+    function loadTenantForEdit(tenantId) {
+        fetch(`/api/tenant/${tenantId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const tenant = data.tenant;
+                    
+                    // Create edit form HTML
+                    const editFormHTML = `
+                        <input type="hidden" name="tenant_id" value="${tenant.id}">
+                        
+                        <!-- Personal Information -->
+                        <div class="section-card mb-4">
+                            <h6 class="section-title">
+                                <i class="fas fa-user me-2 text-primary"></i>Personal Information
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_full_name" class="form-label">Full Name *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-user text-muted"></i></span>
+                                        <input type="text" class="form-control" id="edit_full_name" name="full_name" value="${tenant.full_name}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_gender" class="form-label">Gender *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-venus-mars text-muted"></i></span>
+                                        <select class="form-select" id="edit_gender" name="gender" required>
+                                            <option value="Male" ${tenant.gender === 'Male' ? 'selected' : ''}>Male</option>
+                                            <option value="Female" ${tenant.gender === 'Female' ? 'selected' : ''}>Female</option>
+                                            <option value="Other" ${tenant.gender === 'Other' ? 'selected' : ''}>Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_date_of_birth" class="form-label">Date of Birth</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-calendar text-muted"></i></span>
+                                        <input type="date" class="form-control" id="edit_date_of_birth" name="date_of_birth" value="${tenant.date_of_birth}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_phone_number" class="form-label">Phone Number *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-phone text-muted"></i></span>
+                                        <input type="tel" class="form-control" id="edit_phone_number" name="phone_number" value="${tenant.phone_number}" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_email" class="form-label">Email Address</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-envelope text-muted"></i></span>
+                                        <input type="email" class="form-control" id="edit_email" name="email" value="${tenant.email || ''}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_emergency_contact" class="form-label">Emergency Contact *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-phone-alt text-muted"></i></span>
+                                        <input type="tel" class="form-control" id="edit_emergency_contact" name="emergency_contact" value="${tenant.emergency_contact}" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Identification Details -->
+                        <div class="section-card mb-4">
+                            <h6 class="section-title">
+                                <i class="fas fa-id-card me-2 text-warning"></i>Identification Details
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_aadhaar_number" class="form-label">Aadhaar Number *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-id-card text-muted"></i></span>
+                                        <input type="text" class="form-control" id="edit_aadhaar_number" name="aadhaar_number" value="${tenant.aadhaar_number}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_pan_number" class="form-label">PAN Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-credit-card text-muted"></i></span>
+                                        <input type="text" class="form-control" id="edit_pan_number" name="pan_number" value="${tenant.pan_number || ''}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Permanent Address -->
+                        <div class="section-card mb-4">
+                            <h6 class="section-title">
+                                <i class="fas fa-home me-2 text-info"></i>Permanent Address
+                            </h6>
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label for="edit_address_line1" class="form-label">Address Line 1 *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-map-marker-alt text-muted"></i></span>
+                                        <input type="text" class="form-control" id="edit_address_line1" name="address_line1" value="${tenant.address_line1}" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_address_line2" class="form-label">Address Line 2</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-map-marker-alt text-muted"></i></span>
+                                        <input type="text" class="form-control" id="edit_address_line2" name="address_line2" value="${tenant.address_line2 || ''}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_city" class="form-label">City *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-city text-muted"></i></span>
+                                        <input type="text" class="form-control" id="edit_city" name="city" value="${tenant.city}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_state" class="form-label">State *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-flag text-muted"></i></span>
+                                        <select class="form-select" id="edit_state" name="state" required>
+                                            <option value="Maharashtra" ${tenant.state === 'Maharashtra' ? 'selected' : ''}>Maharashtra</option>
+                                            <option value="Delhi" ${tenant.state === 'Delhi' ? 'selected' : ''}>Delhi</option>
+                                            <option value="Karnataka" ${tenant.state === 'Karnataka' ? 'selected' : ''}>Karnataka</option>
+                                            <option value="Tamil Nadu" ${tenant.state === 'Tamil Nadu' ? 'selected' : ''}>Tamil Nadu</option>
+                                            <option value="Uttar Pradesh" ${tenant.state === 'Uttar Pradesh' ? 'selected' : ''}>Uttar Pradesh</option>
+                                            <option value="Gujarat" ${tenant.state === 'Gujarat' ? 'selected' : ''}>Gujarat</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_pin_code" class="form-label">PIN Code *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-map-pin text-muted"></i></span>
+                                        <input type="text" class="form-control" id="edit_pin_code" name="pin_code" value="${tenant.pin_code}" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Room & Agreement Information -->
+                        <div class="section-card">
+                            <h6 class="section-title">
+                                <i class="fas fa-bed me-2 text-success"></i>Room & Agreement Information
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Room Information</label>
+                                    <div class="p-3 bg-light rounded">
+                                        <strong>Room ${tenant.room_number}</strong> - ${tenant.room_type}
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_bed_number" class="form-label">Bed Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-bed text-muted"></i></span>
+                                        <input type="text" class="form-control" id="edit_bed_number" name="bed_number" value="${tenant.bed_number || ''}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_move_in_date" class="form-label">Move-in Date *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-calendar-day text-muted"></i></span>
+                                        <input type="date" class="form-control" id="edit_move_in_date" name="move_in_date" value="${tenant.move_in_date}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_agreement_period" class="form-label">Agreement Period *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fas fa-file-contract text-muted"></i></span>
+                                        <select class="form-select" id="edit_agreement_period" name="agreement_period" required>
+                                            <option value="6" ${tenant.agreement_period == 6 ? 'selected' : ''}>6 Months</option>
+                                            <option value="11" ${tenant.agreement_period == 11 ? 'selected' : ''}>11 Months</option>
+                                            <option value="12" ${tenant.agreement_period == 12 ? 'selected' : ''}>12 Months</option>
+                                            <option value="24" ${tenant.agreement_period == 24 ? 'selected' : ''}>24 Months</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_monthly_rent" class="form-label">Monthly Rent *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-success">₹</span>
+                                        <input type="number" class="form-control" id="edit_monthly_rent" name="monthly_rent" value="${tenant.monthly_rent}" step="0.01" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_security_deposit_paid" class="form-label">Security Deposit *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-warning">₹</span>
+                                        <input type="number" class="form-control" id="edit_security_deposit_paid" name="security_deposit_paid" value="${tenant.security_deposit_paid}" step="0.01" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('editTenantModalBody').innerHTML = editFormHTML;
+                    document.getElementById('editTenantForm').action = `/edit_tenant/${tenant.id}`;
+                    
+                    // Show the modal
+                    const editModal = new bootstrap.Modal(document.getElementById('editTenantModal'));
+                    editModal.show();
+                } else {
+                    showNotification('Error loading tenant details: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error loading tenant details', 'error');
+            });
+    }
+    
+    // Notification function
+    function showNotification(message, type = 'info') {
+        // Remove any existing notifications
+        const existingAlerts = document.querySelectorAll('.custom-notification');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Create new notification
+        const alertDiv = document.createElement('div');
+        const bgColor = type === 'success' ? 'success' : type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'info';
+        
+        alertDiv.className = `alert alert-${bgColor} custom-notification alert-dismissible fade show`;
+        alertDiv.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                <span>${message}</span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentElement) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.avatar-circle-lg {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 2rem;
+}
+
+.tenant-row:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+.section-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    border-left: 4px solid #007bff;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.empty-state {
+    padding: 3rem 1rem;
+}
+
+.info-card {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.info-card .card-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.btn-group-sm .btn {
+    border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .section-card {
+        padding: 1rem;
+    }
+    
+    .avatar-circle {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.4rem;
+    }
+}
+
+/* Form validation styles */
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220,53,69,0.25);
+}
+</style>
+{% endblock %}

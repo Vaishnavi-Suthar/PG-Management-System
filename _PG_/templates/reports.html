@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Reports & Analytics</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">📊 Print</button>
+            <!-- <button class="btn btn-sm btn-outline-secondary">📄 PDF</button>
+            <button class="btn btn-sm btn-outline-secondary">📁 Excel</button> -->
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <!-- Weekly Payments -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2" style="border-left: 4px solid #007bff !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Weekly Collection</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ "%.2f"|format(payment_counters.weekly) }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-week fa-2x text-primary opacity-50"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-muted">
+                    <i class="fas fa-clock me-1"></i>This Week
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Payments -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2" style="border-left: 4px solid #28a745 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Monthly Collection</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ "%.2f"|format(payment_counters.monthly) }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-alt fa-2x text-success opacity-50"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-muted">
+                    <i class="fas fa-clock me-1"></i>This Month
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Yearly Payments -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2" style="border-left: 4px solid #ffc107 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Yearly Collection</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ "%.2f"|format(payment_counters.yearly) }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar fa-2x text-warning opacity-50"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-muted">
+                    <i class="fas fa-clock me-1"></i>This Year
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Time Payments -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2" style="border-left: 4px solid #17a2b8 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Total Collection</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ "%.2f"|format(payment_counters.all_time) }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-line fa-2x text-info opacity-50"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-muted">
+                    <i class="fas fa-history me-1"></i>All Time
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="row">
+    <!-- Left Column - Financial Reports -->
+    <div class="col-lg-6">
+        <!-- Revenue Analysis -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title">💸 Revenue Analysis</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Rent Collection -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title">📋 Rent Collection Report</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <h4>{{ "%.1f"|format((stats.total_tenants - defaulters|length) / stats.total_tenants * 100 if stats.total_tenants > 0 else 0) }}%</h4>
+                    <p class="text-muted">Collection Rate</p>
+                </div>
+                
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-success" style="width: {{ (stats.total_tenants - defaulters|length) / stats.total_tenants * 100 if stats.total_tenants > 0 else 0 }}%">
+                        Collected
+                    </div>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-4">
+                        <small class="text-success">✅ Collected</small>
+                        <div><strong>{{ stats.total_tenants - defaulters|length }}</strong></div>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-warning">⏳ Partial</small>
+                        <div><strong>0</strong></div>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-danger">❌ Pending</small>
+                        <div><strong>{{ defaulters|length }}</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column - Operational Reports -->
+    <div class="col-lg-6">
+        <!-- Occupancy Analytics -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title">🏠 Occupancy Report</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="occupancyChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Tenant Analytics -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">👥 Tenant Demographics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="text-primary">
+                            <i class="fas fa-male fa-2x"></i>
+                            <div>Male</div>
+                            <strong>
+                                {{ tenants|selectattr('gender', 'equalto', 'Male')|list|length }}
+                            </strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-danger">
+                            <i class="fas fa-female fa-2x"></i>
+                            <div>Female</div>
+                            <strong>
+                                {{ tenants|selectattr('gender', 'equalto', 'Female')|list|length }}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <strong>Room Type Preference:</strong>
+                    <ul class="list-unstyled mt-2">
+                        <li>• Single: {{ occupancy_by_type[0].occupied if occupancy_by_type else 0 }} tenants</li>
+                        <li>• Sharing: {{ occupancy_by_type[1].occupied if occupancy_by_type|length > 1 else 0 }} tenants</li>
+                        <li>• Suite: {{ occupancy_by_type[2].occupied if occupancy_by_type|length > 2 else 0 }} tenants</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Reports Section -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">💰 Financial Reports</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action">Rent Collection Statement</a>
+                    <a href="#" class="list-group-item list-group-item-action">Revenue vs Expenses Report</a>
+                    <a href="#" class="list-group-item list-group-item-action">Security Deposit Status</a>
+                    <a href="#" class="list-group-item list-group-item-action">Pending Dues Report</a>
+                    <a href="#" class="list-group-item list-group-item-action">Payment History Report</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">🏢 Operational Reports</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action">Occupancy Rate Report</a>
+                    <a href="#" class="list-group-item list-group-item-action">Room Utilization Report</a>
+                    <a href="#" class="list-group-item list-group-item-action">Maintenance History</a>
+                    <a href="#" class="list-group-item list-group-item-action">Tenant Turnover Report</a>
+                    <a href="#" class="list-group-item list-group-item-action">Vacancy Analysis</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">👥 Tenant Reports</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action">Tenant Directory</a>
+                    <a href="#" class="list-group-item list-group-item-action">Lease Expiry Report</a>
+                    <a href="#" class="list-group-item list-group-item-action">New Tenant Onboarding</a>
+                    <a href="#" class="list-group-item list-group-item-action">Document Expiry Report</a>
+                    <a href="#" class="list-group-item list-group-item-action">Emergency Contacts List</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Embed Flask data safely -->
+<div id="report-data"
+     data-months='{{ months | tojson | safe }}'
+     data-revenue='{{ revenue_data | tojson | safe }}'
+     data-occupied='{{ stats.occupied_rooms | default(0) }}'
+     data-vacant='{{ stats.vacant_rooms | default(0) }}'
+     data-total='{{ stats.total_rooms | default(0) }}'>
+</div>
+
+<!-- Link external JS file -->
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}

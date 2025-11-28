@@ -1,0 +1,516 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <!-- Notification Dropdown -->
+        {% if new_activities_count > 0 %}
+        <div class="btn-group me-2">
+            <!-- <button class="btn btn-sm btn-outline-warning dropdown-toggle position-relative" 
+                    type="button" 
+                    data-bs-toggle="dropdown"
+                    id="notificationDropdown">
+                <i class="fas fa-bell"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationBadge">
+                    {{ new_activities_count }}
+                    <span class="visually-hidden">New notifications</span>
+                </span>
+            </button> -->
+            <ul class="dropdown-menu dropdown-menu-end notification-dropdown" style="min-width: 350px;">
+                <li>
+                    <div class="dropdown-header d-flex justify-content-between align-items-center">
+                        <span>Recent Activities</span>
+                        <small class="text-muted">Last 24 hours</small>
+                    </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                
+                {% for activity in recent_activities %}
+                <li>
+                    <div class="dropdown-item notification-item">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0">
+                                {% if activity.type == 'payment' %}
+                                <i class="fas fa-money-bill-wave text-success"></i>
+                                {% elif activity.type == 'complaint' %}
+                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                                {% elif activity.type == 'new_tenant' %}
+                                <i class="fas fa-user-plus text-info"></i>
+                                {% elif activity.type == 'enquiry' %}
+                                <i class="fas fa-question-circle text-primary"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                {% if activity.type == 'payment' %}
+                                <div class="fw-bold">{{ activity.data.tenant.full_name }}</div>
+                                <div class="small text-muted">
+                                    Paid ₹{{ "%.2f"|format(activity.data.amount) }} for {{ activity.data.payment_for }}
+                                </div>
+                                {% elif activity.type == 'complaint' %}
+                                <div class="fw-bold">New Complaint</div>
+                                <div class="small text-muted">
+                                    {{ activity.data.tenant.full_name }} - {{ activity.data.category }}
+                                </div>
+                                {% elif activity.type == 'new_tenant' %}
+                                <div class="fw-bold">New Tenant</div>
+                                <div class="small text-muted">
+                                    {{ activity.data.full_name }} - Room {{ activity.data.room.room_number }}
+                                </div>
+                                {% elif activity.type == 'enquiry' %}
+                                <div class="fw-bold">New Enquiry</div>
+                                <div class="small text-muted">
+                                    {{ activity.data.name }} - {{ activity.data.enquiry_type }}
+                                </div>
+                                {% endif %}
+                                <div class="small text-muted">
+                                    <i class="fas fa-clock me-1"></i>{{ activity.timestamp.strftime('%H:%M') }}
+                                    {% if activity.type == 'complaint' %}
+                                    <span class="badge bg-{{ 'danger' if activity.data.priority == 'High' else 'warning' if activity.data.priority == 'Medium' else 'success' }} ms-2">
+                                        {{ activity.data.priority }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+                
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <div class="dropdown-item text-center">
+                        <small class="text-muted">All recent activities shown</small>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        {% else %}
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-secondary" type="button" disabled>
+                <i class="fas fa-bell"></i>
+            </button>
+        </div>
+        {% endif %}
+        
+        <!-- Export Data Dropdown -->
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-download me-1"></i> Export Data
+            </button>
+            <ul class="dropdown-menu">
+                <!-- CSV Exports -->
+                <li><h6 class="dropdown-header">CSV Exports</h6></li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('export_tenants') }}" onclick="showExportLoading('Tenants CSV')">
+                        <i class="fas fa-users text-primary me-2"></i> Export Tenants (CSV)
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('export_payments') }}" onclick="showExportLoading('Payments CSV')">
+                        <i class="fas fa-money-bill-wave text-success me-2"></i> Export Payments (CSV)
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('export_rooms') }}" onclick="showExportLoading('Rooms CSV')">
+                        <i class="fas fa-door-open text-info me-2"></i> Export Rooms (CSV)
+                    </a>
+                </li>
+                
+                <!-- PDF Exports -->
+                <li><h6 class="dropdown-header">PDF Reports</h6></li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('export_tenants_pdf') }}" onclick="showExportLoading('Tenants PDF')">
+                        <i class="fas fa-file-pdf text-danger me-2"></i> Tenants Report (PDF)
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('export_payments_pdf') }}" onclick="showExportLoading('Payments PDF')">
+                        <i class="fas fa-file-pdf text-danger me-2"></i> Payments Report (PDF)
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('export_monthly_report_pdf') }}" onclick="showExportLoading('Monthly Report')">
+                        <i class="fas fa-chart-bar text-warning me-2"></i> Monthly Report (PDF)
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Occupancy</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.occupied_rooms }}/{{ stats.total_rooms }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-bed fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Vacant Beds</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ stats.vacant_rooms }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-door-closed fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Pending Rent</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            ₹{{ "%.2f"|format(stats.pending_rent) }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            New Activities</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="activitiesCount">
+                            {{ new_activities_count }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-bell fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                 <a href="{{ url_for('rooms') }}" class="btn btn-info me-2">
+                    <i class="fas fa-door-open"></i> Add New Room
+                </a>
+                <a href="{{ url_for('tenants') }}" class="btn btn-primary me-2">
+                    <i class="fas fa-user-plus"></i> Add New Tenant
+                </a>
+                <a href="{{ url_for('payments') }}" class="btn btn-success me-2">
+                    <i class="fas fa-money-bill-wave"></i> Mark Rent Paid
+                </a>
+                <a href="{{ url_for('reports') }}" class="btn btn-warning">
+                    <i class="fas fa-chart-bar"></i> Generate Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Activity -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Activities (Last 24 Hours)</h6>
+                <!-- <span class="badge bg-primary" id="mainActivitiesBadge">{{ new_activities_count }} new</span> -->
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for activity in recent_activities %}
+                    <div class="list-group-item activity-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <div>
+                                {% if activity.type == 'payment' %}
+                                <i class="fas fa-money-bill-wave text-success me-2"></i>
+                                <strong>{{ activity.data.tenant.full_name }}</strong> paid 
+                                <span class="text-success">₹{{ "%.2f"|format(activity.data.amount) }}</span> 
+                                for {{ activity.data.payment_for }}
+                                {% elif activity.type == 'complaint' %}
+                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                <strong>New complaint</strong> from 
+                                <strong>{{ activity.data.tenant.full_name }}</strong> - 
+                                <span class="text-warning">{{ activity.data.category }}</span>
+                                <span class="badge bg-{{ 'danger' if activity.data.priority == 'High' else 'warning' if activity.data.priority == 'Medium' else 'success' }} ms-2">
+                                    {{ activity.data.priority }}
+                                </span>
+                                {% elif activity.type == 'new_tenant' %}
+                                <i class="fas fa-user-plus text-info me-2"></i>
+                                <strong>New tenant registered:</strong> 
+                                <strong>{{ activity.data.full_name }}</strong>
+                                {% elif activity.type == 'enquiry' %}
+                                <i class="fas fa-question-circle text-primary me-2"></i>
+                                <strong>New enquiry from</strong> 
+                                <strong>{{ activity.data.name }}</strong>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">{{ activity.timestamp.strftime('%H:%M') }}</small>
+                        </div>
+                        <small class="text-muted">
+                            {% if activity.type == 'payment' %}
+                            Room {{ activity.data.tenant.room.room_number }} • {{ activity.data.payment_method }}
+                            {% elif activity.type == 'complaint' %}
+                            Room {{ activity.data.room.room_number }} • {{ activity.data.description[:50] }}...
+                            {% elif activity.type == 'new_tenant' %}
+                            Room {{ activity.data.room.room_number }} • {{ activity.data.phone_number }}
+                            {% elif activity.type == 'enquiry' %}
+                            {{ activity.data.phone }} • {{ activity.data.enquiry_type }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if new_activities_count == 0 %}
+                    <div class="list-group-item text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                        <p class="mb-0">No recent activities in the last 24 hours</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Lists -->
+    <div class="col-lg-4">
+        <!-- Pending Rent Defaulters -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Pending Rent Defaulters</h6>
+                <span class="badge bg-danger">{{ defaulters|length }}</span>
+            </div>
+            <div class="card-body">
+                {% for defaulter in defaulters %}
+                <div class="mb-3 p-2 border rounded">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong class="d-block">{{ defaulter.full_name }}</strong>
+                            <small class="text-muted">Room {{ defaulter.room.room_number }}</small>
+                        </div>
+                        <span class="badge bg-warning">₹{{ "%.2f"|format(defaulter.monthly_rent) }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                    <p class="mb-0">All rents are paid!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Upcoming Vacancies -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Upcoming Vacancies</h6>
+                <span class="badge bg-info">{{ upcoming_vacancies|length }}</span>
+            </div>
+            <div class="card-body">
+                {% for vacancy in upcoming_vacancies %}
+                <div class="mb-3 p-2 border rounded">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong class="d-block">{{ vacancy.full_name }}</strong>
+                            <small class="text-muted">Room {{ vacancy.room.room_number }}</small>
+                        </div>
+                        <small class="text-muted">{{ vacancy.move_in_date.strftime('%d %b') }}</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-bed text-info fa-2x mb-2"></i>
+                    <p class="mb-0">No upcoming vacancies</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Loading Modal -->
+<div class="modal fade" id="exportLoadingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h6 id="exportLoadingText">Preparing export...</h6>
+                <small class="text-muted">Your download will start shortly</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Notification dropdown styles */
+.notification-dropdown {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item .flex-shrink-0 {
+    width: 24px;
+    text-align: center;
+}
+
+.notification-item .flex-shrink-0 i {
+    font-size: 1.1rem;
+}
+
+/* Activity items in main list */
+.activity-item {
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Different border colors for activity types */
+.activity-item[data-type="payment"] { border-left-color: #28a745; }
+.activity-item[data-type="complaint"] { border-left-color: #ffc107; }
+.activity-item[data-type="new_tenant"] { border-left-color: #17a2b8; }
+.activity-item[data-type="enquiry"] { border-left-color: #6f42c1; }
+
+/* Button group spacing */
+.btn-group {
+    margin-right: 0.5rem;
+}
+
+/* Smooth transitions for badge removal */
+.badge {
+    transition: opacity 0.3s ease;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add data-type attributes to activity items for styling
+    document.querySelectorAll('.activity-item').forEach(item => {
+        const icon = item.querySelector('i');
+        if (icon.classList.contains('fa-money-bill-wave')) {
+            item.setAttribute('data-type', 'payment');
+        } else if (icon.classList.contains('fa-exclamation-triangle')) {
+            item.setAttribute('data-type', 'complaint');
+        } else if (icon.classList.contains('fa-user-plus')) {
+            item.setAttribute('data-type', 'new_tenant');
+        } else if (icon.classList.contains('fa-question-circle')) {
+            item.setAttribute('data-type', 'enquiry');
+        }
+    });
+
+    // Mark notifications as seen when dropdown is opened
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    if (notificationDropdown) {
+        notificationDropdown.addEventListener('show.bs.dropdown', function() {
+            // Hide notification badge when dropdown is shown
+            const notificationBadge = document.getElementById('notificationBadge');
+            if (notificationBadge) {
+                notificationBadge.style.display = 'none';
+            }
+            
+            // Update activities count in stats card to 0
+            const activitiesCount = document.getElementById('activitiesCount');
+            if (activitiesCount) {
+                activitiesCount.textContent = '0';
+                activitiesCount.classList.remove('text-gray-800');
+                activitiesCount.classList.add('text-muted');
+            }
+            
+            // Update main activities badge
+            const mainActivitiesBadge = document.getElementById('mainActivitiesBadge');
+            if (mainActivitiesBadge) {
+                mainActivitiesBadge.textContent = '0 new';
+                mainActivitiesBadge.classList.remove('bg-primary');
+                mainActivitiesBadge.classList.add('bg-secondary');
+            }
+        });
+        
+        // Optional: Keep badge hidden even when dropdown is closed
+        notificationDropdown.addEventListener('hidden.bs.dropdown', function() {
+            const notificationBadge = document.getElementById('notificationBadge');
+            if (notificationBadge) {
+                notificationBadge.style.display = 'none';
+            }
+        });
+    }
+
+    // Export loading function
+    window.showExportLoading = function(type) {
+        document.getElementById('exportLoadingText').textContent = `Generating ${type}...`;
+        const modal = new bootstrap.Modal(document.getElementById('exportLoadingModal'));
+        modal.show();
+        
+        setTimeout(() => {
+            modal.hide();
+        }, 5000);
+    };
+
+    // Mark activities as seen when clicked
+    const activityItems = document.querySelectorAll('.activity-item');
+    activityItems.forEach(item => {
+        item.addEventListener('click', function() {
+            this.style.backgroundColor = '#f8f9fa';
+        });
+    });
+
+    // Auto-refresh dashboard every 2 minutes
+    setInterval(() => {
+        // You can add auto-refresh logic here if needed
+        console.log('Dashboard auto-refresh check...');
+    }, 120000);
+});
+</script>
+{% endblock %}

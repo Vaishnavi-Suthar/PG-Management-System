@@ -1,0 +1,828 @@
+{% extends "base.html" %}
+
+{% block title %}Complaint Box{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">📋 Complaint Management</h1>
+    <div>
+        <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#addComplaintModal">
+            <i class="fas fa-plus-circle me-2"></i> New Complaint
+        </button>
+    </div>
+</div>
+
+<!-- Quick Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2" style="border-left: 4px solid #007bff !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Complaints</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ complaints|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-list fa-2x text-primary opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2" style="border-left: 4px solid #ffc107 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Open Complaints</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ complaints|selectattr('status', 'equalto', 'Open')|list|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-warning opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2" style="border-left: 4px solid #17a2b8 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            In Progress</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ complaints|selectattr('status', 'equalto', 'In Progress')|list|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-sync-alt fa-2x text-info opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2" style="border-left: 4px solid #28a745 !important;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Resolved</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ complaints|selectattr('status', 'equalto', 'Resolved')|list|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Complaint Modal -->
+<div class="modal fade" id="addComplaintModal" tabindex="-1" aria-labelledby="addComplaintModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addComplaintModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i> Lodge New Complaint
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_complaint') }}" id="complaintForm">
+                <div class="modal-body">
+                    <!-- Tenant & Room Information -->
+                    <div class="section-card mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-user me-2 text-primary"></i>Complaint Information
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tenant_id" class="form-label">Submitted By *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-user text-muted"></i></span>
+                                    <select class="form-select" id="tenant_id" name="tenant_id" required>
+                                        <option value="">Select Tenant</option>
+                                        {% for tenant in tenants %}
+                                        <option value="{{ tenant.id }}" data-room="{{ tenant.room.id }}">
+                                            {{ tenant.full_name }} - Room {{ tenant.room.room_number }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="room_id" class="form-label">Room Number *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-door-open text-muted"></i></span>
+                                    <select class="form-select" id="room_id" name="room_id" required>
+                                        <option value="">Select Room</option>
+                                        {% for tenant in tenants %}
+                                        <option value="{{ tenant.room.id }}">Room {{ tenant.room.room_number }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-tags text-muted"></i></span>
+                                    <select class="form-select" id="category" name="category" required>
+                                        <option value="">Select Category</option>
+                                        <option value="Electrical">💡 Electrical</option>
+                                        <option value="Plumbing">🚰 Plumbing</option>
+                                        <option value="Maintenance">🔧 Maintenance</option>
+                                        <option value="Cleaning">🧹 Cleaning</option>
+                                        <option value="Security">🔒 Security</option>
+                                        <option value="Internet">📡 Internet</option>
+                                        <option value="Common Area">🛋️ Common Area</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="priority" class="form-label">Priority *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-exclamation-circle text-muted"></i></span>
+                                    <select class="form-select" id="priority" name="priority" required>
+                                        <option value="Low">🟢 Low (7 days)</option>
+                                        <option value="Medium" selected>🟡 Medium (48 hours)</option>
+                                        <option value="High">🔴 High (24 hours)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="assigned_to" class="form-label">Assigned To</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-user-check text-muted"></i></span>
+                                    <select class="form-select" id="assigned_to" name="assigned_to">
+                                        <option value="">Select Assignee</option>
+                                        <option value="Electrician">Electrician</option>
+                                        <option value="Plumber">Plumber</option>
+                                        <option value="Carpenter">Carpenter</option>
+                                        <option value="Cleaner">Cleaner</option>
+                                        <option value="Security">Security</option>
+                                        <option value="Admin">Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Complaint Description -->
+                    <div class="section-card">
+                        <h6 class="section-title">
+                            <i class="fas fa-file-alt me-2 text-info"></i>Complaint Details
+                        </h6>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Complaint Description *</label>
+                            <textarea class="form-control" id="description" name="description" rows="5" 
+                                      placeholder="Please describe the issue in detail. Be specific about what needs to be fixed, when it started, and any other relevant information..." required></textarea>
+                            <div class="form-text">Provide detailed information to help us resolve your complaint quickly.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i> Submit Complaint
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Complaints List -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="card-title mb-2 mb-md-0 text-primary">
+                    <i class="fas fa-list me-2"></i> All Complaints
+                </h5>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-md-end align-items-center gap-2">
+                    <!-- Search Box -->
+                    <div class="search-box" style="max-width: 300px;">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                            <input type="text" id="complaintSearch" class="form-control border-start-0" 
+                                   placeholder="Search complaints...">
+                            <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Clear search">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Buttons -->
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary active filter-btn" data-filter="all" title="All complaints">
+                            All
+                        </button>
+                        <button type="button" class="btn btn-outline-warning filter-btn" data-filter="open" title="Open complaints">
+                            Open
+                        </button>
+                        <button type="button" class="btn btn-outline-info filter-btn" data-filter="in-progress" title="In Progress complaints">
+                            In Progress
+                        </button>
+                        <button type="button" class="btn btn-outline-success filter-btn" data-filter="resolved" title="Resolved complaints">
+                            Resolved
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="complaintsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Room</th>
+                        <th>Tenant</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Assigned To</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="complaintsTableBody">
+                    {% for complaint in complaints %}
+                    <tr class="complaint-row" 
+                        data-complaint-id="{{ complaint.id }}"
+                        data-complaint-room="{{ complaint.room.room_number|lower }}"
+                        data-complaint-tenant="{{ complaint.tenant.full_name|lower }}"
+                        data-complaint-category="{{ complaint.category|lower }}"
+                        data-complaint-status="{{ complaint.status|lower }}"
+                        data-complaint-priority="{{ complaint.priority|lower }}">
+                        <td>
+                            <strong class="text-primary">#{{ complaint.id }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">Room {{ complaint.room.room_number }}</span>
+                        </td>
+                        <td>
+                            <strong>{{ complaint.tenant.full_name }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ complaint.category }}</span>
+                        </td>
+                        <td>
+                            <div class="complaint-description">
+                                {{ complaint.description[:60] }}{% if complaint.description|length > 60 %}...{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if complaint.priority == 'High' %}
+                                <span class="badge bg-danger rounded-pill">🔴 High</span>
+                            {% elif complaint.priority == 'Medium' %}
+                                <span class="badge bg-warning rounded-pill">🟡 Medium</span>
+                            {% else %}
+                                <span class="badge bg-success rounded-pill">🟢 Low</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if complaint.status == 'Open' %}
+                                <span class="badge bg-secondary rounded-pill">⏳ Open</span>
+                            {% elif complaint.status == 'In Progress' %}
+                                <span class="badge bg-primary rounded-pill">🔄 In Progress</span>
+                            {% elif complaint.status == 'Resolved' %}
+                                <span class="badge bg-success rounded-pill">✅ Resolved</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if complaint.assigned_to %}
+                                <span class="badge bg-info text-dark">{{ complaint.assigned_to }}</span>
+                            {% else %}
+                                <span class="text-muted">Not assigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ complaint.created_at.strftime('%d/%m/%Y') }}</small>
+                            <br>
+                            <small class="text-muted">{{ complaint.created_at.strftime('%H:%M') }}</small>
+                        </td>
+                        
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary view-complaint-btn rounded-start" 
+                                        title="View Details" 
+                                        data-complaint-id="{{ complaint.id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <form method="POST" action="{{ url_for('update_complaint_status', complaint_id=complaint.id) }}" class="d-inline">
+                                    <select name="status" class="form-select form-select-sm status-select" onchange="this.form.submit()">
+                                        <option value="Open" {% if complaint.status == 'Open' %}selected{% endif %}>Open</option>
+                                        <option value="In Progress" {% if complaint.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                        <option value="Resolved" {% if complaint.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                                    </select>
+                                </form>
+                                <button class="btn btn-outline-danger delete-complaint-btn rounded-end" 
+                                        title="Delete Complaint" 
+                                        data-complaint-id="{{ complaint.id }}"
+                                        data-complaint-tenant="{{ complaint.tenant.full_name }}"
+                                        data-complaint-room="{{ complaint.room.room_number }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-comments fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">No complaints found</h5>
+                                <p class="text-muted">Get started by adding your first complaint</p>
+                                <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addComplaintModal">
+                                    <i class="fas fa-plus-circle me-2"></i>Add Your First Complaint
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- View Complaint Modal -->
+<div class="modal fade" id="viewComplaintModal" tabindex="-1" aria-labelledby="viewComplaintModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="viewComplaintModalLabel">
+                    <i class="fas fa-eye me-2"></i> Complaint Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="viewComplaintModalBody">
+                <!-- Content will be loaded dynamically -->
+                <div class="text-center py-4">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading complaint details...</p>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-fill room when tenant is selected
+    const tenantSelect = document.getElementById('tenant_id');
+    const roomSelect = document.getElementById('room_id');
+    
+    tenantSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const roomId = selectedOption.getAttribute('data-room');
+        
+        if (roomId) {
+            roomSelect.value = roomId;
+        }
+    });
+
+    // Search functionality
+    const complaintSearch = document.getElementById('complaintSearch');
+    const clearSearch = document.getElementById('clearSearch');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const complaintRows = document.querySelectorAll('.complaint-row');
+    
+    let currentFilter = 'all';
+    let currentSearchTerm = '';
+
+    // Search function
+    function performSearch() {
+        const searchTerm = currentSearchTerm.toLowerCase();
+        let visibleCount = 0;
+
+        complaintRows.forEach(row => {
+            const complaintRoom = row.getAttribute('data-complaint-room');
+            const complaintTenant = row.getAttribute('data-complaint-tenant');
+            const complaintCategory = row.getAttribute('data-complaint-category');
+            const complaintStatus = row.getAttribute('data-complaint-status');
+
+            // Check if row matches search term
+            const matchesSearch = searchTerm === '' || 
+                complaintRoom.includes(searchTerm) ||
+                complaintTenant.includes(searchTerm) ||
+                complaintCategory.includes(searchTerm);
+
+            // Check if row matches filter
+            let matchesFilter = false;
+            switch(currentFilter) {
+                case 'all':
+                    matchesFilter = true;
+                    break;
+                case 'open':
+                    matchesFilter = complaintStatus === 'open';
+                    break;
+                case 'in-progress':
+                    matchesFilter = complaintStatus === 'in progress';
+                    break;
+                case 'resolved':
+                    matchesFilter = complaintStatus === 'resolved';
+                    break;
+            }
+
+            // Show/hide row based on search and filter
+            if (matchesSearch && matchesFilter) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Show no results message if needed
+        showNoResultsMessage(visibleCount === 0);
+    }
+
+    // Show no results message
+    function showNoResultsMessage(show) {
+        let noResultsRow = document.getElementById('noResultsRow');
+        
+        if (show && !noResultsRow) {
+            noResultsRow = document.createElement('tr');
+            noResultsRow.id = 'noResultsRow';
+            noResultsRow.innerHTML = `
+                <td colspan="10" class="text-center text-muted py-5">
+                    <div class="empty-state">
+                        <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">No complaints found</h5>
+                        <p class="text-muted">Try adjusting your search or filter criteria</p>
+                        <button class="btn btn-primary mt-2" id="clearSearchFilters">
+                            <i class="fas fa-times me-2"></i>Clear Search & Filters
+                        </button>
+                    </div>
+                </td>
+            `;
+            document.getElementById('complaintsTableBody').appendChild(noResultsRow);
+            
+            // Add event listener to clear search button
+            document.getElementById('clearSearchFilters').addEventListener('click', function() {
+                clearSearchAndFilters();
+            });
+        } else if (!show && noResultsRow) {
+            noResultsRow.remove();
+        }
+    }
+
+    // Clear search and filters
+    function clearSearchAndFilters() {
+        complaintSearch.value = '';
+        currentSearchTerm = '';
+        currentFilter = 'all';
+        
+        // Update filter buttons
+        filterButtons.forEach(btn => {
+            if (btn.getAttribute('data-filter') === 'all') {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        
+        performSearch();
+    }
+
+    // Search input event
+    if (complaintSearch) {
+        complaintSearch.addEventListener('input', function() {
+            currentSearchTerm = this.value;
+            performSearch();
+        });
+    }
+
+    // Clear search button
+    if (clearSearch) {
+        clearSearch.addEventListener('click', function() {
+            complaintSearch.value = '';
+            currentSearchTerm = '';
+            performSearch();
+            complaintSearch.focus();
+        });
+    }
+
+    // Filter buttons
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            
+            // Update active state
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            currentFilter = filter;
+            performSearch();
+        });
+    });
+
+    // View complaint functionality
+    const viewButtons = document.querySelectorAll('.view-complaint-btn');
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const complaintId = this.getAttribute('data-complaint-id');
+            loadComplaintForView(complaintId);
+        });
+    });
+
+    // Load complaint data for viewing
+    function loadComplaintForView(complaintId) {
+        fetch(`/api/complaint/${complaintId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const complaint = data.complaint;
+                    
+                    // Create view HTML
+                    const viewHTML = `
+                        <div class="complaint-details">
+                            <!-- Complaint Header -->
+                            <div class="complaint-header text-center mb-4 p-4 bg-light rounded">
+                                <h4 class="text-primary mb-2">Complaint #${complaint.id}</h4>
+                                <div class="complaint-status-badge mb-3">
+                                    ${complaint.status === 'Open' ? 
+                                        '<span class="badge bg-secondary rounded-pill px-3 py-2">⏳ Open</span>' : 
+                                        complaint.status === 'In Progress' ?
+                                        '<span class="badge bg-primary rounded-pill px-3 py-2">🔄 In Progress</span>' :
+                                        '<span class="badge bg-success rounded-pill px-3 py-2">✅ Resolved</span>'}
+                                </div>
+                                <div class="priority-badge">
+                                    ${complaint.priority === 'High' ? 
+                                        '<span class="badge bg-danger rounded-pill px-3 py-2">🔴 High Priority</span>' : 
+                                        complaint.priority === 'Medium' ?
+                                        '<span class="badge bg-warning rounded-pill px-3 py-2">🟡 Medium Priority</span>' :
+                                        '<span class="badge bg-success rounded-pill px-3 py-2">🟢 Low Priority</span>'}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Basic Information -->
+                                <div class="col-md-6">
+                                    <div class="info-card mb-4">
+                                        <h6 class="card-title bg-primary text-white p-3 rounded-top">
+                                            <i class="fas fa-info-circle me-2"></i>Basic Information
+                                        </h6>
+                                        <div class="card-body">
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Submitted By:</span>
+                                                <span class="text-primary">${complaint.tenant_name}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Room Number:</span>
+                                                <span class="badge bg-light text-dark">Room ${complaint.room_number}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Category:</span>
+                                                <span class="badge bg-secondary">${complaint.category}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between py-2">
+                                                <span class="fw-bold">Assigned To:</span>
+                                                <span class="${complaint.assigned_to ? 'badge bg-info text-dark' : 'text-muted'}">${complaint.assigned_to || 'Not assigned'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Date Information -->
+                                <div class="col-md-6">
+                                    <div class="info-card mb-4">
+                                        <h6 class="card-title bg-success text-white p-3 rounded-top">
+                                            <i class="fas fa-calendar me-2"></i>Date Information
+                                        </h6>
+                                        <div class="card-body">
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Submitted Date:</span>
+                                                <span class="text-muted">${complaint.created_date}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between border-bottom py-2">
+                                                <span class="fw-bold">Submitted Time:</span>
+                                                <span class="text-muted">${complaint.created_time}</span>
+                                            </div>
+                                            <div class="info-item d-flex justify-content-between py-2">
+                                                <span class="fw-bold">Expected Resolution:</span>
+                                                <span class="text-warning">${complaint.expected_resolution}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Complaint Description -->
+                            <div class="info-card">
+                                <h6 class="card-title bg-info text-white p-3 rounded-top">
+                                    <i class="fas fa-file-alt me-2"></i>Complaint Description
+                                </h6>
+                                <div class="card-body">
+                                    <div class="description-content p-3 bg-light rounded">
+                                        <p class="mb-0">${complaint.description}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('viewComplaintModalBody').innerHTML = viewHTML;
+                    
+                    // Show the modal
+                    const viewModal = new bootstrap.Modal(document.getElementById('viewComplaintModal'));
+                    viewModal.show();
+                } else {
+                    showNotification('Error loading complaint details: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error loading complaint details', 'error');
+            });
+    }
+
+    // Initialize search
+    performSearch();
+
+    // Notification function
+    function showNotification(message, type = 'info') {
+        // Remove any existing notifications
+        const existingAlerts = document.querySelectorAll('.custom-notification');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Create new notification
+        const alertDiv = document.createElement('div');
+        const bgColor = type === 'success' ? 'success' : type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'info';
+        
+        alertDiv.className = `alert alert-${bgColor} custom-notification alert-dismissible fade show`;
+        alertDiv.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                <span>${message}</span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentElement) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+
+    // Delete complaint functionality
+const deleteButtons = document.querySelectorAll('.delete-complaint-btn');
+deleteButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        const complaintId = this.getAttribute('data-complaint-id');
+        const tenantName = this.getAttribute('data-complaint-tenant');
+        const roomNumber = this.getAttribute('data-complaint-room');
+        
+        if (confirm(`Are you sure you want to delete the complaint from ${tenantName} (Room ${roomNumber})? This action cannot be undone.`)) {
+            deleteComplaint(complaintId);
+        }
+    });
+});
+
+    // Delete complaint function
+    function deleteComplaint(complaintId) {
+        fetch(`/delete_complaint/${complaintId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                // Reload the page after a short delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification('Error: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while deleting the complaint.', 'error');
+        });
+    }
+});
+</script>
+
+<style>
+.section-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    border-left: 4px solid #007bff;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.complaint-row:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+.info-card {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.info-card .card-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.empty-state {
+    padding: 3rem 1rem;
+}
+
+.search-box .input-group {
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.search-box .form-control {
+    border: 1px solid #dee2e6;
+    border-left: none;
+    font-size: 0.875rem;
+}
+
+.search-box .input-group-text {
+    border: 1px solid #dee2e6;
+    border-right: none;
+    background: white;
+    padding: 0.375rem 0.75rem;
+}
+
+.btn-group-sm .btn {
+    border-radius: 4px;
+}
+
+.status-select {
+    width: 120px;
+    border-radius: 0 4px 4px 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .section-card {
+        padding: 1rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.4rem;
+    }
+    
+    .status-select {
+        width: 100px;
+    }
+}
+</style>
+{% endblock %}
