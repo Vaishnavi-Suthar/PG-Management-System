@@ -126,48 +126,32 @@ pg-management-system/
 
 ---
 
-## 📸 **Screenshots (Add Your Images Here)**
+## 📸 **Screenshots **
 
 ### Dashboard
 
-```
 <img width="1893" height="861" alt="p_dashboard" src="https://github.com/user-attachments/assets/a8617b99-1bbb-40ce-b021-ba53521d676f" />
-
-```
 
 ### Room Management
 
-```
 <img width="1897" height="862" alt="p_room" src="https://github.com/user-attachments/assets/abb3368c-2dee-48c9-a093-91679662518f" />
-
-```
 
 ### Tenants Page
 
-```
 <img width="1892" height="859" alt="p_tenant" src="https://github.com/user-attachments/assets/d59bb63c-0a34-4178-a961-91ecc7012b92" />
-
-```
 
 ### Payment Page
 
-```
 <img width="1889" height="862" alt="p_pay" src="https://github.com/user-attachments/assets/42e6dd2a-3924-494b-b0dd-53411a084132" />
 
-```
 ### Complaint Page
 
-```
 <img width="1892" height="865" alt="p_complain" src="https://github.com/user-attachments/assets/891f7440-228b-47f1-8984-77e979a36220" />
-
-```
 
 ### Report Page
 
-```
 <img width="1893" height="863" alt="p_report" src="https://github.com/user-attachments/assets/6fb3d159-cbaa-47c4-9413-6749cd10f069" />
 
----
 
 ## 📜 **License**
 
