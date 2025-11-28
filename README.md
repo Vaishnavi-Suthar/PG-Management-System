@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="https://via.placeholder.com/1100x260/1f1f1f/ffffff?text=PG+Management+System" alt="PG Management System Banner">
-</p>
-
 <h1 align="center">🏠 PG Management System</h1>
 
 <p align="center">A modern web-based system to manage rooms, tenants, payments, and occupancy for PG facilities.</p>
